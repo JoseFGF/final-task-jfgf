@@ -28,6 +28,10 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Python
+__pycache__/
+*.pyc
+
 # Test/coverage output
 coverage/
 
