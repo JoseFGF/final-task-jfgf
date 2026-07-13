@@ -41,3 +41,12 @@ terceros), documentado en el propio job `calculate-version`.
 **Revalidar si**: pasa mucho tiempo desde 2026-07-13 sin que se re-audite
 esta tabla — un SHA fijado no cambia solo, pero conviene revisar
 periódicamente si hay CVEs conocidas en las versiones fijadas aquí.
+
+**Ambigüedad pendiente de confirmar con el instructor (Módulo 12)**: el
+material del módulo enseña GHCR en detalle (login con `GITHUB_TOKEN`, sin
+secrets adicionales) pero su diapositiva de "Criterios de éxito" dice
+literalmente "Imagen en ACR" (Azure Container Registry). Esta
+implementación usa **GHCR** de punta a punta, consistente con el resto del
+módulo y con `pipeline-constitution.md`. Si el criterio de evaluación real
+exige ACR, haría falta añadir login/push a Azure Container Registry (con
+OIDC, coherente con el resto del módulo) además de o en vez de GHCR.
