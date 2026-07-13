@@ -47,7 +47,7 @@ paths:
                 properties:
                   token:
                     type: string
-                    description: JWT firmado, listo para usarse como `Authorization: Bearer <token>`
+                    description: "JWT firmado, listo para usarse como `Authorization: Bearer <token>`"
         '401':
           description: Email inexistente o password incorrecta
           content:
