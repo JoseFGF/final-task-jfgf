@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: fieldops-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fieldops}
+    username: ${SPRING_DATASOURCE_USERNAME:fieldops}
+    password: ${SPRING_DATASOURCE_PASSWORD:fieldops}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+jwt:
+  # ADR-002 (research.md): JWT stateless con rol como claim. El secreto real
+  # se inyecta vía la variable de entorno JWT_SECRET (ver docker-compose.yml);
+  # el valor por defecto solo aplica a desarrollo local sin Docker.
+  secret: ${JWT_SECRET:dev-only-change-me}
+  expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+
+evidence:
+  storage-path: ${EVIDENCE_STORAGE_PATH:./data/evidence}
+
+anthropic:
+  # ADR-001 (research.md): resumen de incidencia vía API de Anthropic. La
+  # clave real se inyecta por la variable de entorno ANTHROPIC_API_KEY (ver
+  # docker-compose.yml); nunca se hardcodea aquí ni en el repositorio.
+  api-key: ${ANTHROPIC_API_KEY:}
+  base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com/v1/messages}
+  model: ${ANTHROPIC_MODEL:claude-3-5-haiku-20241022}
+  timeout-seconds: ${ANTHROPIC_TIMEOUT_SECONDS:10}
+
+server:
+  port: ${SERVER_PORT:8080}

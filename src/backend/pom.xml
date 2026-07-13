@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.3.4</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.fieldops</groupId>
+  <artifactId>fieldops-backend</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>fieldops-backend</name>
+  <description>FieldOps — Order Lifecycle API (backend)</description>
+
+  <properties>
+    <java.version>21</java.version>
+    <maven.compiler.release>21</maven.compiler.release>
+    <jjwt.version>0.12.6</jjwt.version>
+    <testcontainers.version>1.21.4</testcontainers.version>
+    <spotless.version>2.43.0</spotless.version>
+    <!-- Password del keystore de desarrollo autogenerado (ver plugin
+         maven-antrun-plugin más abajo); configurable con
+         -Ddev.keystore.password=... si se necesita otro valor. -->
+    <dev.keystore.password>devchangeit</dev.keystore.password>
+  </properties>
+
+  <dependencies>
+    <!-- Core -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- DB / migrations -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- JWT (ADR-002, research.md) -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>${jjwt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Lombok (opcional, reduce boilerplate en entidades/DTOs) -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Test -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <finalName>fieldops-backend</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <!-- Añade tests/{unit,contract,integration} (repositorio raíz) como test
+           sources del módulo backend, conforme a la Organización del
+           repositorio de la constitution: los tests viven fuera de
+           src/backend/, no anidados en él. -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <id>add-shared-test-sources</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.basedir}/../../tests/unit</source>
+                <source>${project.basedir}/../../tests/contract</source>
+                <source>${project.basedir}/../../tests/integration</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- US5: el mock maker inline de Mockito (usado por @MockBean para
+           sustituir AnthropicClient en tests) depende de Byte Buddy, que aún
+           no declara soporte oficial para el bytecode de JDK 25; el propio
+           mensaje de error de Byte Buddy indica este flag como solución hasta
+           que se publique una versión con soporte formal. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+        </configuration>
+      </plugin>
+
+      <!-- Genera el keystore PKCS#12 de desarrollo usado por el perfil
+           `prod` (application-prod.yml) directamente en el build, en vez de
+           commitear el binario en el repo. Se escribe bajo
+           target/classes/certs (classpath de runtime/test, cubierto por
+           .gitignore vía target/) para que quede disponible tanto en
+           `mvn clean verify` en local (EncryptionSmokeTest activa el perfil
+           prod) como en el build de la imagen Docker. Se omite si el
+           archivo ya existe (builds incrementales sin `clean`). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <dependencies>
+          <!-- Aporta la tarea <if> de Ant, no incluida en el core, para
+               poder condicionar el <exec> de keytool a "solo si el archivo
+               no existe" dentro de un único target. -->
+          <dependency>
+            <groupId>ant-contrib</groupId>
+            <artifactId>ant-contrib</artifactId>
+            <version>1.0b3</version>
+            <exclusions>
+              <exclusion>
+                <groupId>ant</groupId>
+                <artifactId>ant</artifactId>
+              </exclusion>
+            </exclusions>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>generate-dev-keystore</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <taskdef resource="net/sf/antcontrib/antcontrib.properties"
+                         classpathref="maven.plugin.classpath"/>
+                <mkdir dir="${project.build.outputDirectory}/certs"/>
+                <if>
+                  <not>
+                    <available
+                        file="${project.build.outputDirectory}/certs/dev-keystore.p12"/>
+                  </not>
+                  <then>
+                    <exec executable="keytool" failonerror="true">
+                      <arg line="-genkeypair -alias fieldops-dev -keyalg RSA -keysize 2048 -validity 3650 -storetype PKCS12 -keystore &quot;${project.build.outputDirectory}/certs/dev-keystore.p12&quot; -storepass ${dev.keystore.password} -keypass ${dev.keystore.password} -dname &quot;CN=localhost, OU=FieldOps Dev, O=FieldOps, L=Dev, ST=Dev, C=US&quot; -ext SAN=dns:localhost,ip:127.0.0.1"/>
+                    </exec>
+                  </then>
+                </if>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Formatting (T004) -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless.version}</version>
+        <configuration>
+          <lineEndings>UNIX</lineEndings>
+          <java>
+            <includes>
+              <include>src/main/java/**/*.java</include>
+              <include>src/test/java/**/*.java</include>
+              <include>../../tests/unit/**/*.java</include>
+              <include>../../tests/contract/**/*.java</include>
+              <include>../../tests/integration/**/*.java</include>
+            </includes>
+            <!-- No se usa googleJavaFormat/removeUnusedImports: ambos
+                 dependen de internals de com.sun.tools.javac que no son
+                 estables entre versiones de JDK (rompen en JDK muy recientes
+                 con NoSuchMethodError). Se mantienen comprobaciones de
+                 formato agnósticas de JDK. -->
+            <importOrder/>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+            <indent>
+              <spaces>true</spaces>
+              <spacesPerTab>2</spacesPerTab>
+            </indent>
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

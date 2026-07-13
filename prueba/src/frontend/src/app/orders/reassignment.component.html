@@ -1,0 +1,58 @@
+<section class="mx-auto max-w-2xl px-4 py-8">
+  <a routerLink="/orders" class="text-sm font-medium text-blue-600 hover:text-blue-700">&larr; Volver a mis órdenes</a>
+
+  <h1 class="mt-6 text-xl font-semibold text-gray-900">Reasignar orden</h1>
+
+  <p class="mt-2 text-sm text-gray-500">
+    Introduce el UUID del technician al que quieres reasignar esta orden. No hay
+    un listado de technicians disponible en este slice del backend; consulta el
+    identificador correcto por otro medio.
+  </p>
+
+  @if (errorMessage()) {
+    <p class="mt-4 rounded-md bg-red-50 p-4 text-sm text-red-800" role="alert">
+      {{ errorMessage() }}
+    </p>
+  }
+
+  <form [formGroup]="reassignForm" (ngSubmit)="submitReassignment()" class="mt-6 space-y-4">
+    <div>
+      <label for="newTechnicianId" class="block text-sm font-medium text-gray-700">
+        UUID del nuevo technician <span class="text-red-600">*</span>
+      </label>
+      <input
+        id="newTechnicianId"
+        type="text"
+        formControlName="newTechnicianId"
+        required
+        placeholder="p.ej. 3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        aria-describedby="newTechnicianId-help"
+        [attr.aria-invalid]="newTechnicianIdControl.invalid && newTechnicianIdControl.touched"
+      />
+      <p id="newTechnicianId-help" class="mt-1 text-xs text-gray-500">
+        Debe ser un UUID válido (p.ej. 3fa85f64-5717-4562-b3fc-2c963f66afa6).
+      </p>
+
+      @if (newTechnicianIdControl.invalid && newTechnicianIdControl.touched) {
+        <p class="mt-1 text-xs text-red-600" role="alert">
+          @if (newTechnicianIdControl.hasError('required')) {
+            Debes indicar el UUID del nuevo technician.
+          } @else if (newTechnicianIdControl.hasError('pattern')) {
+            El formato no es un UUID válido.
+          }
+        </p>
+      }
+    </div>
+
+    <div class="flex gap-3">
+      <button
+        type="submit"
+        [disabled]="!canSubmit"
+        class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+      >
+        {{ submitting() ? 'Reasignando…' : 'Reasignar' }}
+      </button>
+    </div>
+  </form>
+</section>

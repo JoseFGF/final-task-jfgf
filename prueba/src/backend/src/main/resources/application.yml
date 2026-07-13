@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: prueba-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/prueba}
+    username: ${SPRING_DATASOURCE_USERNAME:prueba}
+    password: ${SPRING_DATASOURCE_PASSWORD:prueba}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+jwt:
+  # JWT stateless con el rol como claim. El secreto real se inyecta vía la
+  # variable de entorno JWT_SECRET; el valor por defecto solo aplica a
+  # desarrollo local (esta réplica corre sobre HTTP plano, sin Docker/TLS).
+  secret: ${JWT_SECRET:dev-only-change-me}
+  expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+evidence:
+  # Directorio local donde se guarda el contenido binario de la evidencia
+  # fotográfica (US2, FR-005); esta réplica no usa Docker ni un volumen
+  # dedicado.
+  storage-path: ${EVIDENCE_STORAGE_PATH:evidence-storage}

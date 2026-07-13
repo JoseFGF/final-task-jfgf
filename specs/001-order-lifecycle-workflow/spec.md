@@ -227,6 +227,9 @@ en vez de generar un resumen.
   menos una foto de evidencia.
 - **FR-006**: El sistema DEBE rechazar el registro de ejecución si no se adjunta
   ninguna foto de evidencia.
+- **FR-006a**: El sistema DEBE rechazar el registro de ejecución si alguna foto
+  adjunta no es un archivo de imagen válido (formato no soportado o archivo
+  corrupto), sin marcar la ejecución como registrada.
 - **FR-007**: El sistema DEBE rechazar el registro de ejecución sobre una orden
   que no esté en estado `in_progress`, o que no esté asignada al technician que
   intenta registrarla.
@@ -279,6 +282,11 @@ en vez de generar un resumen.
 - **FR-023**: El sistema DEBE registrar, con fines de auditoría, todo rechazo
   de acceso por falta de sesión válida o por rol no autorizado (FR-017,
   FR-018), incluyendo qué se intentó y quién lo intentó.
+- **FR-024**: El sistema DEBE permitir a un usuario autenticarse con su email
+  y password contra los usuarios de seed y, si son correctos, obtener un
+  token válido para el resto de operaciones de la API; si son incorrectos
+  (email inexistente o password errónea) DEBE rechazar la solicitud sin
+  emitir un token.
 
 ### Key Entities
 
@@ -332,3 +340,14 @@ en vez de generar un resumen.
 - No se implementa borrado automático ni política de expiración de datos en
   este slice: la evidencia fotográfica y las notas de ejecución se conservan
   mientras la orden exista en el sistema (ver Clarifications).
+- **FR-024 (login) se añadió durante `/speckit.implement`, no en el diseño
+  original de ninguna user story**: US1-US5 asumían una sesión ya existente
+  y los tests de contrato/integración generaban el JWT directamente con
+  `JwtService` (nunca vía HTTP), como indica el comentario de
+  `V2__seed_data.sql` ("esta fase no implementa login/registro"). Al
+  implementar se detectó que no existía ninguna forma real de que un usuario
+  obtuviera un token — un hueco real para cualquier consumidor de la API
+  fuera de los tests — por lo que se añadió el endpoint mínimo
+  `POST /auth/login` (email+password contra los usuarios de seed, con un
+  hash BCrypt real sustituyendo el placeholder `seed-not-a-real-hash` de
+  V2) en vez de dejarlo como limitación documentada sin resolver.

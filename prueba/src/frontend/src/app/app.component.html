@@ -1,0 +1,17 @@
+<main class="min-h-screen bg-gray-50">
+  <h1 class="sr-only">FieldOps</h1>
+
+  @if (isAuthenticated()) {
+    <div class="flex justify-end px-4 pt-4">
+      <button
+        type="button"
+        (click)="logout()"
+        class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        Cerrar sesión
+      </button>
+    </div>
+  }
+
+  <router-outlet />
+</main>

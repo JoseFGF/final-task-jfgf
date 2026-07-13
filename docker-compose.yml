@@ -1,0 +1,59 @@
+services:
+  postgres:
+    # T056 (FR-019/FR-020): imagen propia con TLS habilitado (certificado
+    # autofirmado de desarrollo, ver docker/postgres/). Cubre el cifrado en
+    # tránsito de la conexión JDBC backend -> BD (sslmode=require, más abajo).
+    build:
+      context: ./docker/postgres
+    environment:
+      POSTGRES_DB: fieldops
+      POSTGRES_USER: fieldops
+      POSTGRES_PASSWORD: fieldops
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fieldops"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./src/backend
+    environment:
+      # Perfil `prod` (application-prod.yml): habilita HTTPS (server.ssl.*,
+      # FR-019) y exige TLS en la conexión JDBC (sslmode=require, FR-020).
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fieldops?sslmode=require
+      SPRING_DATASOURCE_USERNAME: fieldops
+      SPRING_DATASOURCE_PASSWORD: fieldops
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      EVIDENCE_STORAGE_PATH: /data/evidence
+      # Certificado autofirmado de desarrollo empaquetado en el jar
+      # (src/backend/src/main/resources/certs/dev-keystore.p12, generado con
+      # src/backend/generate-dev-cert.sh). En un despliegue real se
+      # sustituiría por un certificado de CA vía SERVER_SSL_KEY_STORE* o por
+      # terminación TLS en un proxy/balanceador gestionado.
+      SERVER_SSL_KEY_STORE_PASSWORD: ${SERVER_SSL_KEY_STORE_PASSWORD:-devchangeit}
+    volumes:
+      - evidence-photos:/data/evidence
+    ports:
+      - "8443:8443"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./src/frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres-data:
+  evidence-photos:

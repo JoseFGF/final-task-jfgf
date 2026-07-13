@@ -1,0 +1,90 @@
+<section class="mx-auto max-w-2xl px-4 py-8">
+  @if (loading()) {
+    <p class="mt-4 text-gray-600" role="status">Cargando orden…</p>
+  }
+
+  @if (!loading() && loadErrorMessage()) {
+    <p class="mt-4 rounded-md bg-red-50 p-4 text-red-800" role="alert">
+      {{ loadErrorMessage() }}
+    </p>
+  }
+
+  @if (!loading() && order(); as currentOrder) {
+    <a
+      [routerLink]="['/orders', currentOrder.id]"
+      class="text-sm text-blue-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    >
+      ← Volver al detalle de la orden
+    </a>
+
+    <h2 class="mt-4 text-xl font-semibold text-gray-900">Revisar orden</h2>
+
+    @if (currentOrder.executionNote) {
+      <div class="mt-4">
+        <h3 class="text-sm font-medium text-gray-500">Nota de ejecución</h3>
+        <p class="mt-1 text-sm text-gray-900">{{ currentOrder.executionNote }}</p>
+      </div>
+    }
+
+    <app-incident-summary [orderId]="currentOrder.id" />
+
+    @if (submitErrorMessage()) {
+      <p class="mt-4 rounded-md bg-red-50 p-4 text-sm text-red-800" role="alert">
+        {{ submitErrorMessage() }}
+      </p>
+    }
+
+    <div class="mt-6 flex flex-wrap items-start gap-4">
+      <button
+        type="button"
+        (click)="approve()"
+        [disabled]="submitting()"
+        class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 disabled:cursor-not-allowed disabled:bg-gray-300"
+      >
+        {{ submitting() ? 'Enviando…' : 'Aprobar' }}
+      </button>
+
+      @if (!showRejectForm()) {
+        <button
+          type="button"
+          (click)="toggleRejectForm()"
+          [disabled]="submitting()"
+          class="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:bg-gray-300"
+        >
+          Rechazar
+        </button>
+      }
+    </div>
+
+    @if (showRejectForm()) {
+      <form class="mt-6 space-y-4 rounded-md border border-red-200 bg-red-50 p-4" [formGroup]="rejectForm" (ngSubmit)="reject()">
+        <div>
+          <label for="comment" class="block text-sm font-medium text-gray-700">
+            Motivo del rechazo (obligatorio)
+          </label>
+          <textarea
+            id="comment"
+            formControlName="comment"
+            rows="4"
+            required
+            aria-describedby="comment-hint"
+            class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+          ></textarea>
+          @if (!canSubmitReject) {
+            <p id="comment-hint" class="mt-1 text-sm text-gray-500">
+              Debes escribir un motivo para poder rechazar la orden.
+            </p>
+          }
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="!canSubmitReject"
+          class="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:bg-gray-300"
+        >
+          {{ submitting() ? 'Enviando…' : 'Confirmar rechazo' }}
+        </button>
+      </form>
+    }
+  }
+</section>

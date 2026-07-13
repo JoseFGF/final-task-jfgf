@@ -1,0 +1,410 @@
+openapi: 3.0.3
+info:
+  title: FieldOps — Order Lifecycle API
+  version: 0.1.0
+  description: >
+    Contrato de la API para el feature 001-order-lifecycle-workflow
+    (reasignación, ejecución y revisión de órdenes). Fuente de verdad previa
+    a la implementación (Principio IV de la constitution).
+
+servers:
+  - url: /api/v1
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Autenticarse con email + password y obtener un JWT (FR-024)
+      description: >
+        Único endpoint público de la API: no requiere `Authorization` previo.
+        Añadido durante `/speckit.implement` al detectarse que ninguna otra
+        historia de usuario cubría cómo un usuario real obtiene el token que
+        el resto de endpoints exige (ver spec.md, Assumptions).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Credenciales válidas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token:
+                    type: string
+                    description: JWT firmado, listo para usarse como `Authorization: Bearer <token>`
+        '401':
+          description: Email inexistente o password incorrecta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders:
+    get:
+      summary: Consultar órdenes (FR-001, FR-002, FR-003)
+      description: >
+        Devuelve las órdenes visibles para el usuario autenticado.
+        DISPATCHER y SUPERVISOR ven todas las órdenes del sistema.
+        TECHNICIAN ve solo las órdenes que tiene asignadas.
+      x-roles: [DISPATCHER, TECHNICIAN, SUPERVISOR]
+      responses:
+        '200':
+          description: Lista de órdenes visibles para el rol del usuario
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/{orderId}:
+    get:
+      summary: Consultar el detalle de una orden (FR-001, FR-002, FR-003, FR-004)
+      x-roles: [DISPATCHER, TECHNICIAN, SUPERVISOR]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Detalle de la orden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: >
+            El usuario autenticado no tiene, según su rol, motivo para ver
+            esta orden (FR-004) — p.ej. un TECHNICIAN consultando una orden
+            que no tiene asignada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders/{orderId}/execution:
+    post:
+      summary: Registrar la ejecución de una orden (FR-005, FR-006, FR-007, FR-008)
+      description: >
+        Solo el TECHNICIAN asignado puede registrar la ejecución, y solo
+        cuando la orden está en estado `in_progress`. Requiere al menos una
+        foto de evidencia. Al completarse, la orden pasa a `pending_review`.
+        Si la orden volvía de un rechazo, el technician puede ver el
+        `rejectionComment` previo en el detalle de la orden (FR-022) antes de
+        reenviar.
+      x-roles: [TECHNICIAN]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [note, photos]
+              properties:
+                note:
+                  type: string
+                  description: Nota de ejecución (FR-005)
+                photos:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                    format: binary
+                  description: >
+                    Al menos una foto de evidencia (JPEG/PNG); ver
+                    docs/assumptions.md para límites de formato/tamaño (FR-006)
+      responses:
+        '200':
+          description: Ejecución registrada; la orden pasa a `pending_review`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: >
+            El usuario no es TECHNICIAN, o la orden no está asignada a él
+            (FR-007)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: >
+            La orden no está en estado `in_progress` (FR-007)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >
+            No se adjuntó ninguna foto de evidencia (FR-006), o alguna foto
+            adjunta no es un archivo de imagen válido — formato no soportado
+            o archivo corrupto (FR-006a)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders/{orderId}/review:
+    post:
+      summary: Aprobar o rechazar una orden en revisión (FR-009 a FR-012a)
+      description: >
+        Solo el SUPERVISOR puede aprobar/rechazar, y solo cuando la orden
+        está en `pending_review`. Aprobar cambia el estado a `closed`.
+        Rechazar exige un `comment` no vacío (FR-012a) y devuelve la orden a
+        `in_progress` (FR-012), guardando el comentario (FR-022).
+      x-roles: [SUPERVISOR]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision:
+                  type: string
+                  enum: [APPROVE, REJECT]
+                comment:
+                  type: string
+                  description: >
+                    Obligatorio y no vacío cuando decision = REJECT (FR-012a);
+                    ignorado si decision = APPROVE.
+      responses:
+        '200':
+          description: Orden aprobada (`closed`) o rechazada (`in_progress`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: El usuario no es SUPERVISOR (FR-010)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: La orden no está en `pending_review` (FR-010)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >
+            decision = REJECT sin `comment`, o con `comment` vacío (FR-012a)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders/{orderId}/reassignment:
+    post:
+      summary: Reasignar una orden a otro technician (FR-013, FR-014, FR-021)
+      description: >
+        Solo el DISPATCHER puede reasignar, y solo si la orden está en
+        `assigned`, `in_progress` o `pending_review` (no en `closed`).
+        Reasignar una orden en `pending_review` cambia únicamente el
+        technician responsable, sin alterar el estado ni la revisión en
+        curso del supervisor (FR-013). Ante reasignaciones concurrentes, gana
+        la última reasignación válida procesada (FR-021).
+      x-roles: [DISPATCHER]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newTechnicianId]
+              properties:
+                newTechnicianId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Orden reasignada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: El usuario no es DISPATCHER (FR-014)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: La orden está en estado `closed` (FR-014)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders/{orderId}/incident-summary:
+    post:
+      summary: Solicitar el resumen de incidencia vía IA (FR-015, FR-016)
+      description: >
+        Solo el SUPERVISOR puede solicitarlo, y solo para una orden en
+        `pending_review` con ejecución registrada. El resumen es breve y en
+        el mismo idioma que la nota (FR-015). Si la nota está vacía o es
+        insuficiente — o si la llamada al proveedor de IA falla/hace timeout
+        (research.md, ADR-001) — el sistema declara evidencia insuficiente en
+        vez de inventar contenido (FR-016, Principio V); esto se representa
+        con `sufficient: false` y `summary: null`, no como un error HTTP.
+      x-roles: [SUPERVISOR]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: Resultado del resumen (con o sin evidencia suficiente)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncidentSummaryResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: El usuario no es SUPERVISOR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: La orden no está en `pending_review` o no tiene ejecución registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Ver research.md ADR-002 (JWT stateless, rol como claim)
+
+  parameters:
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: No hay sesión válida (FR-017)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: La orden no existe
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    OrderStatus:
+      type: string
+      enum: [draft, assigned, in_progress, pending_review, closed]
+
+    OrderSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        assignedTechnicianId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrderDetail:
+      allOf:
+        - $ref: '#/components/schemas/OrderSummary'
+        - type: object
+          properties:
+            executionNote:
+              type: string
+              nullable: true
+            evidencePhotoIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            rejectionComment:
+              type: string
+              nullable: true
+              description: Motivo del último rechazo (FR-012, FR-022); null si nunca fue rechazada o ya fue aprobada.
+
+    IncidentSummaryResult:
+      type: object
+      required: [sufficient]
+      properties:
+        sufficient:
+          type: boolean
+          description: false si no hay evidencia suficiente para resumir (FR-016)
+        summary:
+          type: string
+          nullable: true
+          description: Presente solo si sufficient = true
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

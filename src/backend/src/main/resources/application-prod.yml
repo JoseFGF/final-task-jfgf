@@ -1,0 +1,33 @@
+# T056 (FR-019, FR-020, SC-006): perfil de despliegue con cifrado en
+# tránsito habilitado. Se activa vía SPRING_PROFILES_ACTIVE=prod (ver
+# docker-compose.yml, raíz del repo). Deliberadamente NO es el perfil por
+# defecto ni el de test: los tests de integración (Testcontainers) y los
+# contract tests arrancan el contexto sobre HTTP plano en local, y forzar
+# HTTPS ahí exigiría gestionar certificados/TLS en cada suite sin aportar
+# cobertura adicional sobre FR-019/FR-020 (que son responsabilidad de este
+# perfil de despliegue). `tests/integration/EncryptionSmokeTest.java`
+# verifica este perfil explícitamente (perfil `prod` + lectura de esta
+# configuración), sin exigir HTTPS en el perfil de test por defecto.
+server:
+  port: ${SERVER_PORT:8443}
+  ssl:
+    enabled: true
+    key-store: ${SERVER_SSL_KEY_STORE:classpath:certs/dev-keystore.p12}
+    key-store-password: ${SERVER_SSL_KEY_STORE_PASSWORD:devchangeit}
+    key-store-type: PKCS12
+    key-alias: fieldops-dev
+    # Al no configurarse un connector HTTP adicional, Tomcat solo expone el
+    # connector HTTPS: cualquier intento de conexión en texto plano falla en
+    # el handshake TLS en vez de servirse sin cifrar (FR-019, SC-006).
+
+spring:
+  datasource:
+    # sslmode=require (FR-020): la conexión JDBC hacia PostgreSQL exige TLS;
+    # el driver rechaza conectar si el servidor no ofrece SSL. El servidor
+    # PostgreSQL de docker-compose (docker/postgres/) se construye con
+    # ssl=on y un certificado autofirmado de desarrollo para poder cumplir
+    # esta exigencia sin depender de infraestructura externa.
+    #
+    # Cifrado en reposo real (disco): fuera del alcance de la aplicación —
+    # ver decisión documentada en research.md ("Cifrado en reposo (disco)").
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fieldops?sslmode=require}

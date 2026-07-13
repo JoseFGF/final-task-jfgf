@@ -1,0 +1,84 @@
+<section class="mx-auto max-w-2xl px-4 py-8">
+  <a routerLink="/orders" class="text-sm font-medium text-blue-600 hover:text-blue-700">&larr; Volver a mis órdenes</a>
+
+  @if (loading()) {
+    <p class="mt-6 text-sm text-gray-500" role="status">Cargando orden…</p>
+  } @else if (errorMessage()) {
+    <p class="mt-6 rounded-md bg-red-50 p-4 text-sm text-red-800" role="alert">
+      {{ errorMessage() }}
+    </p>
+  } @else if (order()) {
+    @let currentOrder = order()!;
+    <h1 class="mt-6 text-xl font-semibold text-gray-900">Orden {{ currentOrder.id }}</h1>
+
+    @if (currentOrder.rejectionComment) {
+      <div
+        role="alert"
+        class="mt-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+      >
+        <p class="font-semibold">Motivo del último rechazo</p>
+        <p class="mt-1">{{ currentOrder.rejectionComment }}</p>
+      </div>
+    }
+
+    <dl class="mt-6 grid grid-cols-1 gap-4 rounded-md border border-gray-200 bg-white p-4 sm:grid-cols-2">
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Estado</dt>
+        <dd class="mt-1 inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+          {{ currentOrder.status }}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Técnico asignado</dt>
+        <dd class="mt-1 text-sm text-gray-900">{{ currentOrder.assignedTechnicianId ?? 'Sin asignar' }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Creada</dt>
+        <dd class="mt-1 text-sm text-gray-900">{{ currentOrder.createdAt | date: 'medium' }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Actualizada</dt>
+        <dd class="mt-1 text-sm text-gray-900">{{ currentOrder.updatedAt | date: 'medium' }}</dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Nota de ejecución</dt>
+        <dd class="mt-1 text-sm text-gray-900">{{ currentOrder.executionNote ?? 'Sin nota de ejecución todavía.' }}</dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Fotos de evidencia</dt>
+        <dd class="mt-1 text-sm text-gray-900">
+          {{ currentOrder.evidencePhotoIds.length }} foto(s) adjunta(s)
+        </dd>
+      </div>
+    </dl>
+
+    @if (canRegisterExecution || canReview || canReassign) {
+      <nav class="mt-6 flex flex-wrap gap-3" aria-label="Acciones sobre la orden">
+        @if (canRegisterExecution) {
+          <a
+            [routerLink]="['/orders', currentOrder.id, 'execution']"
+            class="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            Registrar ejecución
+          </a>
+        }
+        @if (canReview) {
+          <a
+            [routerLink]="['/orders', currentOrder.id, 'review']"
+            class="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            Revisar orden
+          </a>
+        }
+        @if (canReassign) {
+          <a
+            [routerLink]="['/orders', currentOrder.id, 'reassign']"
+            class="inline-flex items-center rounded-md bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+          >
+            Reasignar orden
+          </a>
+        }
+      </nav>
+    }
+  }
+</section>

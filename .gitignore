@@ -1,0 +1,48 @@
+# Java / Spring Boot (src/backend)
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+HELP.md
+
+# Node / Angular (src/frontend)
+node_modules/
+dist/
+.angular/
+*.log
+npm-debug.log*
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Docker
+*.pid
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Test/coverage output
+coverage/
+
+# Runtime evidence storage (FileStorageService) — datos generados en local/tests, no código
+evidence-storage/
+data/evidence/
+src/backend/data/
+
+# Certificados/keystores de desarrollo autogenerados (nunca commitear): el
+# keystore del backend ya se genera bajo target/ (cubierto arriba); estos
+# patrones cubren además una generación accidental fuera de target/ (p.ej.
+# ejecutando generate-dev-cert.sh manualmente sin indicar ruta de salida).
+docker/postgres/certs/
+src/backend/src/main/resources/certs/
+*.p12
+*.jks
+*.crt
+*.key

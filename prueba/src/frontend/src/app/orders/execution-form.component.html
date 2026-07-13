@@ -1,0 +1,68 @@
+<section class="mx-auto max-w-2xl px-4 py-8">
+  <a routerLink="/orders" class="text-sm font-medium text-blue-600 hover:text-blue-700">&larr; Volver a mis órdenes</a>
+
+  <h1 class="mt-6 text-xl font-semibold text-gray-900">Registrar ejecución</h1>
+
+  @if (loadingOrder()) {
+    <p class="mt-6 text-sm text-gray-500" role="status">Cargando orden…</p>
+  } @else {
+    @if (order()?.rejectionComment) {
+      <div
+        role="alert"
+        class="mt-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+      >
+        <p class="font-semibold">Motivo del último rechazo</p>
+        <p class="mt-1">{{ order()!.rejectionComment }}</p>
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <p class="mt-4 rounded-md bg-red-50 p-4 text-sm text-red-800" role="alert">
+        {{ errorMessage() }}
+      </p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="mt-6 space-y-6">
+      <div>
+        <label for="note" class="block text-sm font-medium text-gray-700">Nota de ejecución</label>
+        <textarea
+          id="note"
+          formControlName="note"
+          rows="4"
+          class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          aria-describedby="note-help"
+        ></textarea>
+        <p id="note-help" class="mt-1 text-xs text-gray-500">Describe el trabajo realizado.</p>
+      </div>
+
+      <div>
+        <label for="photos" class="block text-sm font-medium text-gray-700">
+          Fotos de evidencia <span class="text-red-600">*</span>
+        </label>
+        <input
+          id="photos"
+          type="file"
+          accept="image/*"
+          multiple
+          (change)="onFilesSelected($event)"
+          class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+          aria-describedby="photos-help"
+        />
+        <p id="photos-help" class="mt-1 text-xs text-gray-500">
+          Debes adjuntar al menos una foto (JPEG/PNG).
+        </p>
+        @if (photos().length > 0) {
+          <p class="mt-1 text-sm text-gray-700">{{ photos().length }} foto(s) seleccionada(s).</p>
+        }
+      </div>
+
+      <button
+        type="submit"
+        [disabled]="!canSubmit"
+        class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+      >
+        {{ submitting() ? 'Enviando…' : 'Registrar ejecución' }}
+      </button>
+    </form>
+  }
+</section>

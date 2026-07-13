@@ -1,0 +1,39 @@
+<section class="mx-auto max-w-4xl px-4 py-8">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold text-gray-900">Mis órdenes</h1>
+    <button
+      type="button"
+      (click)="loadOrders()"
+      class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    >
+      Actualizar
+    </button>
+  </div>
+
+  @if (loading()) {
+    <p class="mt-6 text-sm text-gray-500" role="status">Cargando órdenes…</p>
+  } @else if (errorMessage()) {
+    <p class="mt-6 rounded-md bg-red-50 p-4 text-sm text-red-800" role="alert">
+      {{ errorMessage() }}
+    </p>
+  } @else if (orders().length === 0) {
+    <p class="mt-6 text-sm text-gray-500">No tienes órdenes visibles por el momento.</p>
+  } @else {
+    <ul class="mt-6 divide-y divide-gray-200 rounded-md border border-gray-200 bg-white">
+      @for (order of orders(); track order.id) {
+        <li>
+          <a
+            [routerLink]="['/orders', order.id]"
+            class="flex flex-col gap-1 px-4 py-3 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <span class="font-medium text-gray-900">{{ order.id }}</span>
+            <span class="inline-flex w-fit items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+              {{ order.status }}
+            </span>
+            <span class="text-xs text-gray-500">Actualizada: {{ order.updatedAt | date: 'short' }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>
