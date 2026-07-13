@@ -20,6 +20,9 @@ permissions:
 jobs:
   constitution-guardian:
     name: constitution-guardian
+    permissions:
+      contents: read
+      pull-requests: read
     uses: ./.github/workflows/_constitution-guardian.yml
     with:
       also_check_app_constitution: false
