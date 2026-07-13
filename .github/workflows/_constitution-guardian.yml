@@ -1,0 +1,82 @@
+name: Constitution Guardian (reusable)
+
+# Job reutilizable (FR-004, FR-020) invocado por workflow_call desde
+# pr-validation-back.yml, pr-validation-front.yml y
+# pipeline-config-guardian.yml. El nombre de check publicado es siempre
+# "constitution-guardian" en los tres casos (contracts/required-status-checks.md),
+# para que la protección de rama lo exija una sola vez sin importar cuál de
+# los tres lo disparó en una PR concreta.
+
+on:
+  workflow_call:
+    inputs:
+      also_check_app_constitution:
+        description: >-
+          Si además de pipeline-constitution.md debe revisarse el cambio
+          contra .specify/memory/constitution.md (cuando la PR toca código
+          de la aplicación, no solo configuración del pipeline).
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  constitution-guardian:
+    name: constitution-guardian
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (historial completo para ver el diff real de la PR)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Revisión del guardián de constitución
+        id: guardian
+        uses: anthropics/claude-code-action@e90deca47693f9457b72f2b53c17d7c445a87342 # v1.0.171
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Eres el guardián automático de las reglas no negociables de este
+            pipeline de CI/CD (FR-004 de specs/002-cicd-pipeline-branching/spec.md).
+
+            Lee pipeline-constitution.md en la raíz del repo.
+            ${{ inputs.also_check_app_constitution && 'Esta pull request también toca código de la aplicación: lee además .specify/memory/constitution.md y aplica sus principios igualmente.' || '' }}
+
+            Examina el diff de esta pull request (usa `git diff` contra la
+            rama base si lo necesitas) y determina si el cambio viola
+            alguno de los principios no negociables de la(s) constitution(es)
+            aplicable(s) anterior(es). No emitas juicio sobre estilo o
+            calidad de código en general — solo sobre violaciones concretas
+            de esos principios (p.ej. una acción de terceros referenciada
+            por tag en vez de por SHA, un job de despliegue que reconstruye
+            en vez de solo hacer pull, un permiso más amplio del necesario,
+            un endpoint sin distinguir 401 de 403, etc.).
+
+            Responde exclusivamente con la estructura de salida solicitada.
+          claude_args: |
+            --max-turns 8
+            --json-schema '{"type":"object","required":["violation","reason"],"properties":{"violation":{"type":"boolean","description":"true si el cambio viola algún principio no negociable"},"reason":{"type":"string","description":"motivo concreto de la violación, o cadena vacía si no hay violación"}}}'
+
+      - name: Fallar el check si se detectó una violación
+        shell: bash
+        run: |
+          OUTPUT='${{ steps.guardian.outputs.structured_output }}'
+          if [ -z "$OUTPUT" ]; then
+            echo "El guardián no devolvió una salida estructurada — se trata como fallo (no se puede confirmar que no hay violación)."
+            exit 1
+          fi
+          VIOLATION=$(echo "$OUTPUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('violation', True))" 2>/dev/null || echo "true")
+          REASON=$(echo "$OUTPUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('reason',''))" 2>/dev/null || echo "salida no parseable")
+          echo "Motivo reportado por el guardián: $REASON"
+          if [ "$VIOLATION" != "False" ] && [ "$VIOLATION" != "false" ]; then
+            echo "::error::Violación de constitution detectada: $REASON"
+            exit 1
+          fi
+          echo "Sin violaciones detectadas."

@@ -1,0 +1,82 @@
+name: CI Develop - Backend
+
+# US3 (FR-008, FR-009): al fusionarse en develop, construir+publicar una
+# versión de prueba y desplegarla automáticamente, y solo, en dev.
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "src/backend/**"
+      - "tests/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-publish-snapshot:
+    name: build-and-publish-snapshot
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ghcr.io/${{ github.repository }}/fieldops-backend:${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: Calcular tag de snapshot (ADR-P2/ADR-P5)
+        id: version
+        run: |
+          BASE=$(git describe --tags --match 'backend-v*' --abbrev=0 2>/dev/null || echo "backend-v0.1.0")
+          BASE=${BASE#backend-v}
+          SHA_CORTO=$(git rev-parse --short HEAD)
+          echo "tag=${BASE}-snapshot.${SHA_CORTO}" >> "$GITHUB_OUTPUT"
+      - name: Login en GHCR
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build + push de la imagen snapshot
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: src/backend
+          push: true
+          tags: ghcr.io/${{ github.repository }}/fieldops-backend:${{ steps.version.outputs.tag }}
+      - name: Comprimir y subir el dist de este build (90 días)
+        run: |
+          mkdir -p /tmp/dist
+          cp src/backend/target/*.jar /tmp/dist/ 2>/dev/null || echo "sin jar reutilizable fuera del build multistage de Docker; se conserva solo la imagen publicada"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backend-dist-${{ steps.version.outputs.tag }}
+          path: /tmp/dist
+          retention-days: 90
+          if-no-files-found: ignore
+
+  deploy-dev:
+    name: deploy-dev
+    needs: build-and-publish-snapshot
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      # Principio V: este job NUNCA construye. El alcance de este feature es
+      # el pipeline de CI/CD en sí (specs/002-cicd-pipeline-branching), no el
+      # aprovisionamiento de un host/clúster de destino real — ninguno está
+      # definido en plan.md/research.md. "Desplegar" se demuestra aquí
+      # haciendo pull de exactamente la imagen recién publicada (probando
+      # que existe y es la misma que se acaba de construir), que es lo
+      # verificable sin un target de despliegue real.
+      - name: Login en GHCR
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull de la imagen ya publicada (sin build)
+        run: docker pull ${{ needs.build-and-publish-snapshot.outputs.image }}

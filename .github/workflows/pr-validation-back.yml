@@ -1,0 +1,116 @@
+name: PR Validation - Backend
+
+# US1 (spec.md FR-001, FR-002): validaciones bloqueantes para toda PR desde
+# una rama de feature hacia develop que toque el backend. paths incluye
+# tests/** (no solo src/backend/**) porque build-helper-maven-plugin añade
+# tests/{unit,contract,integration} como test-sources del módulo backend
+# (ver src/backend/pom.xml) — un cambio ahí también es un cambio de backend.
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - "src/backend/**"
+      - "tests/**"
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    name: backend-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: mvn clean verify (unit + contract + integration)
+        working-directory: src/backend
+        run: mvn -B clean verify
+
+  backend-openapi-lint:
+    name: backend-openapi-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Spectral lint contra contracts/openapi.yaml
+        uses: stoplightio/spectral-action@6416fd018ae38e60136775066eb3e98172143141 # v0.8.13
+        with:
+          file_glob: "contracts/openapi.yaml"
+
+  backend-breaking-changes:
+    name: backend-breaking-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: Obtener contracts/openapi.yaml de la base de la PR
+        run: git show "origin/${{ github.event.pull_request.base.ref }}:contracts/openapi.yaml" > /tmp/openapi-base.yaml
+      - name: oasdiff breaking changes (base vs. PR)
+        uses: oasdiff/oasdiff-action/breaking@024f6c399f9a21ada1addb0f9a36ce1bfac995f1 # v0.1.6
+        with:
+          base: /tmp/openapi-base.yaml
+          revision: contracts/openapi.yaml
+          fail-on-diff: true
+
+  backend-secrets-scan:
+    name: backend-secrets-scan
+    runs-on: ubuntu-latest
+    container:
+      image: docker://zricethezav/gitleaks@sha256:b109bc5f8f76a38196a3e413704fc5b9e3c32360bce4e4b603bd6f45b3721dbb
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+      - name: gitleaks detect
+        run: gitleaks detect --source . --redact --exit-code 1
+
+  backend-acceptance-check:
+    name: backend-acceptance-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Levantar postgres + backend real vía docker compose
+        env:
+          JWT_SECRET: dev-only-change-me
+          SERVER_SSL_KEY_STORE_PASSWORD: devchangeit
+        run: docker compose up -d --build postgres backend
+      - name: Ejecutar scripts/acceptance-check.sh contra la API real
+        run: bash scripts/acceptance-check.sh
+      - name: Volcar logs del backend si falla
+        if: failure()
+        run: docker compose logs backend
+      - name: Apagar el stack
+        if: always()
+        run: docker compose down -v
+
+  backend-image-scan:
+    name: backend-image-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Construir la imagen que se publicaría (sin publicarla)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: src/backend
+          push: false
+          load: true
+          tags: fieldops-backend:pr-scan
+      - name: Trivy — bloquea CRITICAL/HIGH, reporta MEDIUM/LOW (ADR-P8)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: fieldops-backend:pr-scan
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
+
+  constitution-guardian:
+    name: constitution-guardian
+    uses: ./.github/workflows/_constitution-guardian.yml
+    with:
+      also_check_app_constitution: true
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

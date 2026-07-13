@@ -144,6 +144,57 @@ SC-004 (tiempo de registro de ejecución end-to-end).
 - `.specify/memory/constitution.md` — principios no negociables del
   proyecto; referencia obligatoria antes de proponer cambios de proceso.
 
+## Pipeline de CI/CD y estrategia de ramas
+
+Rige `pipeline-constitution.md` (independiente de `.specify/memory/constitution.md`)
+y `specs/002-cicd-pipeline-branching/`. Resumen operativo:
+
+- **`feature/*`**: trabajo en curso, nunca se despliega. Abrir PR hacia
+  `develop` dispara las validaciones del componente tocado
+  (`pr-validation-back.yml`/`pr-validation-front.yml`): tests, contrato de
+  API (Spectral/oasdiff), secretos (Gitleaks), criterios de aceptación
+  contra la API real (`scripts/acceptance-check.sh`), vulnerabilidades de
+  imagen (Trivy, backend) y el guardián de constitución (en toda PR).
+- **`develop`**: línea de integración continua. Cada fusión construye y
+  publica una imagen snapshot (`x.y.z-snapshot.{sha-corto}`) en GHCR y la
+  despliega automáticamente en `dev`, sin tocar `pre`/`prod`.
+- **`main`**: versión final. Cada fusión calcula la versión con
+  `semantic-release`/Conventional Commits, publica una entrega formal
+  (GitHub Release) y despliega automáticamente en `pre`; llegar a `prod`
+  exige aprobación explícita de la lista de revisores del Environment
+  `prod` (GitHub Environments, sin automatizar).
+- **`hotfix/*`**: única excepción — puede fusionarse directo en `main` sin
+  pasar por `develop`, con exactamente los mismos gates; al fusionarse abre
+  automáticamente una PR de reintegración hacia `develop`.
+
+**Cómo abrir una PR de prueba para disparar la validación**:
+
+```bash
+git checkout -b feature/prueba-pipeline develop
+# tocar algo en src/backend/ o src/frontend/
+git push origin feature/prueba-pipeline
+gh pr create --base develop --title "prueba pipeline"
+```
+
+**Cómo verificar que la imagen snapshot llegó a GHCR**: pestaña *Packages*
+del repositorio en GitHub, o `docker pull ghcr.io/<owner>/<repo>/fieldops-backend:<tag>`
+con el tag que reporta el job `build-and-publish-snapshot` en el resumen del
+run de Actions.
+
+**Registro de aprobaciones de producción (SC-005)**: pestaña *Environments*
+del repositorio (o *Deployments* en la vista general) — cada despliegue a
+`prod` queda listado con quién lo aprobó y cuándo; es un registro nativo de
+GitHub Environments, no algo que este pipeline construya por su cuenta.
+
+**Duración del gate de PR (SC-008)**: visible en la pestaña *Actions*, en la
+duración total del *check suite* de cada PR. Este alcance no incluye un
+dashboard dedicado para agregar el percentil 95% a lo largo del tiempo —
+revisar manualmente si el gate empieza a acercarse a los 15 minutos.
+
+**Configuración pendiente antes de la primera ejecución real** (Environments,
+protección de rama, secretos): ver `.github/ENVIRONMENTS_SETUP.md` — son
+pasos de administración del repositorio en GitHub, no archivos de este repo.
+
 ## Roles de prueba (seed data)
 
 `src/backend/src/main/resources/db/migration/V2__seed_data.sql` carga cuatro

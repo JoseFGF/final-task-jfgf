@@ -1,0 +1,27 @@
+name: Pipeline Config Guardian
+
+# FR-020: cualquier PR que toque la configuración del propio pipeline
+# dispara el guardián de constitución, sin importar si además toca o no un
+# componente de la aplicación. FR-020/plan.md nombran genéricamente
+# "pipeline-spec.md" como parte de esa configuración; el archivo real de
+# esta feature es specs/002-cicd-pipeline-branching/ (spec.md, plan.md,
+# etc.) — se usa esa ruta real aquí en vez del nombre genérico.
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "pipeline-constitution.md"
+      - "specs/002-cicd-pipeline-branching/**"
+
+permissions:
+  contents: read
+
+jobs:
+  constitution-guardian:
+    name: constitution-guardian
+    uses: ./.github/workflows/_constitution-guardian.yml
+    with:
+      also_check_app_constitution: false
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
