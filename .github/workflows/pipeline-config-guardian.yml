@@ -11,6 +11,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/**"
+      - ".github/scripts/**"
       - "pipeline-constitution.md"
       - "specs/002-cicd-pipeline-branching/**"
 
@@ -20,6 +21,9 @@ permissions:
 jobs:
   constitution-guardian:
     name: constitution-guardian
+    permissions:
+      contents: read
+      pull-requests: read
     uses: ./.github/workflows/_constitution-guardian.yml
     with:
       also_check_app_constitution: false

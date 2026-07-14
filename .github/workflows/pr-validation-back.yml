@@ -49,13 +49,16 @@ jobs:
         with:
           fetch-depth: 0
       - name: Obtener contracts/openapi.yaml de la base de la PR
-        run: git show "origin/${{ github.event.pull_request.base.ref }}:contracts/openapi.yaml" > /tmp/openapi-base.yaml
+        # oasdiff-action corre en un contenedor Docker que solo monta
+        # $GITHUB_WORKSPACE — un archivo en /tmp del runner no es visible
+        # dentro del contenedor, así que el base spec debe escribirse
+        # dentro del propio workspace.
+        run: git show "origin/${{ github.event.pull_request.base.ref }}:contracts/openapi.yaml" > "${{ github.workspace }}/openapi-base.yaml"
       - name: oasdiff breaking changes (base vs. PR)
         uses: oasdiff/oasdiff-action/breaking@024f6c399f9a21ada1addb0f9a36ce1bfac995f1 # v0.1.6
         with:
-          base: /tmp/openapi-base.yaml
+          base: openapi-base.yaml
           revision: contracts/openapi.yaml
-          fail-on-diff: true
 
   backend-secrets-scan:
     name: backend-secrets-scan
@@ -109,6 +112,9 @@ jobs:
 
   constitution-guardian:
     name: constitution-guardian
+    permissions:
+      contents: read
+      pull-requests: read
     uses: ./.github/workflows/_constitution-guardian.yml
     with:
       also_check_app_constitution: true

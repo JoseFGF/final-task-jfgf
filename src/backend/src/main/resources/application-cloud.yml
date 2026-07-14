@@ -1,0 +1,12 @@
+# Perfil para plataformas PaaS (Railway, Render, etc.) que terminan el TLS
+# público en su propio edge y esperan que la app hable HTTP plano en el
+# puerto que ellas asignan dinámicamente — a diferencia del perfil `prod`
+# (TLS propio con certificado autofirmado, pensado para docker-compose sin
+# un proxy gestionado delante). Se activa vía SPRING_PROFILES_ACTIVE=cloud.
+#
+# Variables a configurar en la plataforma (Railway): SPRING_DATASOURCE_URL,
+# SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD (referenciando el
+# servicio Postgres gestionado), JWT_SECRET, ANTHROPIC_API_KEY. El puerto
+# NO se configura a mano: Railway inyecta $PORT automáticamente.
+server:
+  port: ${PORT:8080}
