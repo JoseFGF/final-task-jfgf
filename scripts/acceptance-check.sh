@@ -59,7 +59,7 @@ TECH_TOKEN=$(echo "$TECH_LOGIN" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 STATUS=$($CURL -o /dev/null -w '%{http_code}' -X POST \
   "$BASE_URL/orders/a2222222-2222-2222-2222-222222222222/reassignment" \
   -H "Authorization: Bearer $TECH_TOKEN" -H 'Content-Type: application/json' \
-  -d '{"newTechnicianId":"44444444-4444-4444-4444-444444444444"}')
+  -d '{"newTechnicianEmail":"technician2@fieldops.test"}')
 [ "$STATUS" = "403" ] || fail "TECHNICIAN reasignando una orden devolvió $STATUS, se esperaba 403"
 
 echo "Todos los criterios de aceptación verificados contra la API real."
