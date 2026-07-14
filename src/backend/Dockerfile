@@ -16,7 +16,11 @@ COPY src ./src
 RUN mvn -q -B package -DskipTests
 
 # --- Runtime stage ---
-FROM eclipse-temurin:21-jre AS runtime
+# Variante Alpine: la imagen eclipse-temurin:21-jre (Ubuntu/chiselled) trae
+# el gestor de servicios "pebble" de Canonical con dependencias Go
+# desactualizadas (golang.org/x/net) — 7 CVEs HIGH detectados por Trivy sin
+# relación con nuestro código. Alpine no incluye ese binario.
+FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
 # El perfil `prod` (application-prod.yml) expone HTTPS en el puerto 8443
