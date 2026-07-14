@@ -1,11 +1,13 @@
 openapi: 3.0.3
 info:
   title: FieldOps — Order Lifecycle API
-  version: 0.1.0
+  version: 0.2.0
   description: >
     Contrato de la API para el feature 001-order-lifecycle-workflow
-    (reasignación, ejecución y revisión de órdenes). Fuente de verdad previa
-    a la implementación (Principio IV de la constitution).
+    (reasignación, ejecución y revisión de órdenes), ampliado por el feature
+    003-order-management-enhancements (asignación/reasignación por email,
+    creación de órdenes, visualización de fotos de evidencia). Fuente de
+    verdad previa a la implementación (Principio IV de la constitution).
 
 servers:
   - url: /api/v1
@@ -74,6 +76,63 @@ paths:
                   $ref: '#/components/schemas/OrderSummary'
         '401':
           $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Crear una orden nueva (FR-007, FR-007a, FR-007b, FR-007c)
+      description: >
+        Solo el DISPATCHER puede crear órdenes (FR-008). `description` es
+        obligatoria (FR-007a). `technicianEmail` es opcional: si se aporta y
+        corresponde a un technician existente, la orden se crea directamente
+        en `assigned` con ese technician como responsable y con
+        `lastReassignedBy`/`lastReassignedAt` fijados al usuario y momento de
+        la creación (FR-007c); si no se aporta, la orden queda en `draft` sin
+        technician asignado.
+      x-roles: [DISPATCHER]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description]
+              properties:
+                description:
+                  type: string
+                  minLength: 1
+                  description: >
+                    Descripción de texto libre del trabajo a realizar
+                    (FR-007). Debe contener al menos un carácter no-espacio
+                    (FR-007a); el backend recorta espacios antes de validar.
+                technicianEmail:
+                  type: string
+                  format: email
+                  nullable: true
+                  description: >
+                    Si se indica, DEBE corresponder a un usuario existente
+                    con rol TECHNICIAN (FR-007b); búsqueda insensible a
+                    mayúsculas/minúsculas (FR-003).
+      responses:
+        '201':
+          description: Orden creada, en `draft` o en `assigned` según si se indicó technicianEmail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: El usuario no es DISPATCHER (FR-008)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >
+            Falta `description` o está vacía (FR-007a), o `technicianEmail`
+            no corresponde a ningún technician existente (FR-007b)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /orders/{orderId}:
     get:
@@ -101,6 +160,56 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /orders/{orderId}/evidence-photos/{photoId}:
+    get:
+      summary: Obtener el contenido binario de una foto de evidencia (FR-009, FR-009a)
+      description: >
+        Devuelve el binario de la foto (`Content-Type` según el
+        `contentType` almacenado, ver
+        `specs/001-order-lifecycle-workflow/data-model.md`). Requiere la
+        misma autenticación y regla de autorización que
+        `GET /orders/{orderId}` (FR-009a): un TECHNICIAN solo puede acceder
+        a fotos de una orden que tiene asignada; DISPATCHER/SUPERVISOR, a
+        cualquiera. No existe acceso público sin sesión, aunque se conozca
+        el `photoId`.
+      x-roles: [DISPATCHER, TECHNICIAN, SUPERVISOR]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Contenido binario de la foto
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: >
+            El usuario autenticado no tiene, según su rol, motivo para ver
+            esta orden (misma regla que FR-004)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: La orden o la foto no existen, o la foto no pertenece a esa orden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /orders/{orderId}/execution:
     post:
@@ -231,14 +340,21 @@ paths:
 
   /orders/{orderId}/reassignment:
     post:
-      summary: Reasignar una orden a otro technician (FR-013, FR-014, FR-021)
+      summary: >
+        Asignar (inicial, desde `draft`) o reasignar un technician a una
+        orden, por email (FR-001 a FR-005, FR-013, FR-014, FR-021)
       description: >
-        Solo el DISPATCHER puede reasignar, y solo si la orden está en
-        `assigned`, `in_progress` o `pending_review` (no en `closed`).
-        Reasignar una orden en `pending_review` cambia únicamente el
-        technician responsable, sin alterar el estado ni la revisión en
-        curso del supervisor (FR-013). Ante reasignaciones concurrentes, gana
-        la última reasignación válida procesada (FR-021).
+        Solo el DISPATCHER puede asignar/reasignar, y solo si la orden está
+        en `draft` (asignación inicial, FR-004/FR-005 — corrige el bug de
+        `003-order-management-enhancements`), `assigned`, `in_progress` o
+        `pending_review` (no en `closed`, FR-006). El technician se
+        identifica por `newTechnicianEmail` (FR-001), no por UUID; la
+        búsqueda es insensible a mayúsculas/minúsculas e ignora espacios al
+        principio/final (FR-003). Reasignar una orden en `pending_review`
+        cambia únicamente el technician responsable, sin alterar el estado
+        ni la revisión en curso del supervisor (FR-013). Ante
+        asignaciones/reasignaciones concurrentes, gana la última procesada
+        válidamente (FR-021).
       x-roles: [DISPATCHER]
       parameters:
         - $ref: '#/components/parameters/OrderId'
@@ -248,14 +364,14 @@ paths:
           application/json:
             schema:
               type: object
-              required: [newTechnicianId]
+              required: [newTechnicianEmail]
               properties:
-                newTechnicianId:
+                newTechnicianEmail:
                   type: string
-                  format: uuid
+                  format: email
       responses:
         '200':
-          description: Orden reasignada
+          description: Orden asignada/reasignada (transiciona a `assigned` si venía de `draft`)
           content:
             application/json:
               schema:
@@ -271,7 +387,15 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: La orden está en estado `closed` (FR-014)
+          description: La orden está en estado `closed` (FR-006, FR-014)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >
+            `newTechnicianEmail` no corresponde a ningún usuario con rol
+            TECHNICIAN (FR-002)
           content:
             application/json:
               schema:
@@ -359,10 +483,21 @@ components:
           format: uuid
         status:
           $ref: '#/components/schemas/OrderStatus'
-        assignedTechnicianId:
+        description:
           type: string
-          format: uuid
           nullable: true
+          description: >
+            Descripción del trabajo (FR-007). Nullable porque las órdenes
+            creadas antes de `003-order-management-enhancements` no la
+            tienen (ADR-007); toda orden creada vía `POST /orders` la trae.
+        assignedTechnicianEmail:
+          type: string
+          format: email
+          nullable: true
+          description: >
+            Email del technician asignado (FR-003a) — sustituye al UUID
+            interno que exponía esta feature antes de
+            `003-order-management-enhancements`.
         createdAt:
           type: string
           format: date-time

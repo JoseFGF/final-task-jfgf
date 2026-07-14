@@ -8,4 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
   Optional<User> findByEmail(String email);
+
+  /** Búsqueda insensible a mayúsculas/minúsculas (FR-003, ADR-005). */
+  Optional<User> findByEmailIgnoreCase(String email);
 }
