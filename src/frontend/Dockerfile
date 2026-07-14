@@ -27,12 +27,16 @@ COPY --from=build /build/dist/frontend/browser /usr/share/nginx/html
 
 # nginx.conf.template se resuelve con envsubst al arrancar el contenedor
 # (mecanismo estándar de la imagen oficial nginx:alpine para archivos en
-# /etc/nginx/templates/*.template -> /etc/nginx/conf.d/*.conf). Los valores
-# por defecto reproducen el docker-compose local (backend accesible como
-# host "backend:8443" vía el DNS embebido de Docker). En Railway se
-# sobreescriben BACKEND_ORIGIN y DNS_RESOLVER como variables de entorno del
-# servicio frontend, sin tocar esta imagen.
-ENV DNS_RESOLVER=127.0.0.11 \
+# /etc/nginx/templates/*.template -> /etc/nginx/conf.d/*.conf). El valor por
+# defecto de BACKEND_ORIGIN reproduce el docker-compose local (backend
+# accesible como host "backend:8443"). En Railway se sobreescribe
+# BACKEND_ORIGIN como variable de entorno del servicio frontend, sin tocar
+# esta imagen. NGINX_ENTRYPOINT_LOCAL_RESOLVERS activa el script propio de
+# la imagen oficial que detecta el resolver DNS real del contenedor (DNS
+# embebido de Docker en compose, DNS interno en Railway) en vez de
+# hardcodear un IP público que puede no ser alcanzable por egress
+# restringido en la red privada del PaaS.
+ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 \
     BACKEND_SCHEME=https \
     BACKEND_ORIGIN=backend:8443
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template

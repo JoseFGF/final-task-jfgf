@@ -5,16 +5,15 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # DNS_RESOLVER, BACKEND_SCHEME y BACKEND_ORIGIN se sustituyen vía
-    # envsubst al arrancar el contenedor (mecanismo estándar de la imagen
-    # oficial nginx:alpine para archivos en /etc/nginx/templates/*.template).
-    # Los valores por defecto (ver Dockerfile ENV) reproducen el
-    # docker-compose local: backend accesible como host "backend:8443" vía
-    # el DNS embebido de Docker. En Railway (u otro PaaS) el backend es un
-    # servicio aparte con dominio público, así que se sobreescriben
-    # BACKEND_ORIGIN (dominio público) y DNS_RESOLVER (DNS público, p.ej.
-    # 1.1.1.1) como variables de entorno del servicio frontend.
-    resolver ${DNS_RESOLVER} valid=30s;
+    # NGINX_LOCAL_RESOLVERS lo genera el propio entrypoint oficial de la
+    # imagen (15-local-resolvers.envsh, activado con
+    # NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 en el Dockerfile) leyendo los
+    # nameservers reales de /etc/resolv.conf del contenedor. Así funciona
+    # igual en docker-compose (DNS embebido de Docker, 127.0.0.11) y en
+    # Railway (su DNS interno) sin hardcodear un resolver público: un IP
+    # público fijo (p.ej. 1.1.1.1) puede no ser alcanzable por egress
+    # restringido en la red privada del PaaS, dejando la petición colgada.
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=30s;
 
     # `OrderApiService` (src/app/orders/order-api.service.ts) llama a rutas
     # relativas ("/api/v1/..."), es decir, mismo origen que el frontend. Sin
