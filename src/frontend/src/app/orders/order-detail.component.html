@@ -107,9 +107,10 @@
         <button
           type="button"
           (click)="startWork()"
-          class="mt-6 inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+          [disabled]="statusChangeSubmitting()"
+          class="mt-6 inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Iniciar trabajo
+          {{ statusChangeSubmitting() ? 'Guardando…' : 'Iniciar trabajo' }}
         </button>
       }
 
@@ -127,9 +128,10 @@
               <button
                 type="button"
                 (click)="changeStatusManually(targetStatus)"
-                class="inline-flex items-center rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500"
+                [disabled]="statusChangeSubmitting()"
+                class="inline-flex items-center rounded-md bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Mover a {{ targetStatus }}
+                {{ statusChangeSubmitting() ? 'Guardando…' : 'Mover a ' + targetStatus }}
               </button>
             }
           </div>

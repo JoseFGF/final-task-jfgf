@@ -160,6 +160,15 @@ describe('OrderApiService', () => {
     req.flush({ sufficient: true, summary: 'Resumen breve' });
   });
 
+  it('changeOrderStatus hace POST a /api/v1/orders/{id}/status con status', () => {
+    service.changeOrderStatus('order-1', 'in_progress').subscribe();
+
+    const req = httpTesting.expectOne('/api/v1/orders/order-1/status');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ status: 'in_progress' });
+    req.flush({});
+  });
+
   it('getIncidentSummary propaga sufficient: false con summary null, sin tratarlo como error', () => {
     service.getIncidentSummary('order-1').subscribe((result) => {
       expect(result).toEqual({ sufficient: false, summary: null });

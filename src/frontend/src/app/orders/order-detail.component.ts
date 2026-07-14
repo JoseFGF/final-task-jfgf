@@ -49,6 +49,9 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   /** Mensaje de error de la última acción de cambio de estado (iniciar trabajo o corrección manual). */
   readonly statusChangeError = signal<string | null>(null);
 
+  /** `true` mientras una petición de cambio de estado está en curso (evita envíos duplicados). */
+  readonly statusChangeSubmitting = signal<boolean>(false);
+
   private orderId = '';
 
   private readonly route = inject(ActivatedRoute);
@@ -176,10 +179,15 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
 
   private changeStatus(target: OrderStatus): void {
     this.statusChangeError.set(null);
+    this.statusChangeSubmitting.set(true);
 
     this.orderApi.changeOrderStatus(this.orderId, target).subscribe({
-      next: () => this.loadOrder(),
+      next: () => {
+        this.statusChangeSubmitting.set(false);
+        this.loadOrder();
+      },
       error: (error: HttpErrorResponse) => {
+        this.statusChangeSubmitting.set(false);
         this.statusChangeError.set(this.extractStatusChangeErrorMessage(error));
       },
     });

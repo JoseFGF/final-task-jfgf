@@ -7,7 +7,6 @@ import com.fieldops.exception.NotFoundException;
 import com.fieldops.exception.ValidationException;
 import com.fieldops.model.Order;
 import com.fieldops.model.OrderStatus;
-import com.fieldops.model.Role;
 import com.fieldops.repository.OrderRepository;
 import com.fieldops.security.CurrentUser;
 import java.util.EnumMap;
@@ -136,6 +135,10 @@ public class OrderStatusService {
     if (!ADJACENCY.getOrDefault(order.getStatus(), Set.of()).contains(targetStatus)) {
       throw new ConflictException(
           "Transición no reconocida: " + order.getStatus() + " -> " + targetStatus);
+    }
+    if (targetStatus == OrderStatus.assigned && order.getAssignedTechnician() == null) {
+      throw new ValidationException(
+          "Debe asignarse un technician (feature 003) antes de mover la orden a assigned");
     }
     if (targetStatus == OrderStatus.pending_review && order.getEvidencePhotos().isEmpty()) {
       throw new ValidationException(

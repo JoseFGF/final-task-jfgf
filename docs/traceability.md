@@ -148,3 +148,53 @@ Ninguno detectado — todos los tests nuevos bajo `tests/contract/` y
   `OrderService` (extraído a `TechnicianLookupService`), validación
   duplicada de `description`, y `canSubmit` de `OrderCreateComponent` sin
   descartar descripciones de solo espacios.
+
+---
+
+## Feature: `specs/004-order-state-transitions/`
+
+Actualizado tras `/speckit.implement` (US1-US2 + Polish T023-T028): todos los
+tests referenciados abajo existen como código real y pasan (136/136 backend
+`mvn test`, 71/71 frontend `ng test --watch=false`).
+
+### Requisitos Funcionales
+
+| FR | Acceptance Criteria (spec.md) | Test | Estado |
+|---|---|---|---|
+| FR-001 | US1 escenario 1 | `tests/integration/OrderStartByTechnicianTest.java`, `tests/contract/OrderStatusContractTest.java` | Cubierto |
+| FR-002 | US1 escenario 2 | `tests/integration/OrderStartWrongTechnicianTest.java` | Cubierto |
+| FR-003 | US1 escenarios 3-4 | `tests/integration/OrderStartInvalidStateTest.java` | Cubierto |
+| FR-004 | US2 escenarios 1-9 (cadena de adyacencia) | `tests/integration/OrderStatusManualForwardTest.java`, `tests/integration/OrderStatusManualBackwardTest.java`, `tests/integration/OrderStatusManualNonAdjacentTest.java`, `tests/integration/OrderStatusManualToClosedTest.java`, `tests/integration/OrderStatusManualClosedTerminalTest.java` | Cubierto |
+| FR-005 | US2 escenario 5 (evidencia mínima antes de `pending_review`) | `tests/integration/OrderStatusManualMissingEvidenceTest.java`, `tests/integration/OrderStatusManualToPendingReviewTest.java` | Cubierto |
+| FR-006 | US2 escenario 6 (desvincular technician al volver a `draft`) | `tests/integration/OrderStatusManualToDraftUnassignsTest.java` | Cubierto |
+| FR-007 | US1/US2 rol incorrecto | `tests/integration/OrderStartWrongRoleTest.java`, `tests/integration/OrderStatusManualForbiddenForTechnicianTest.java` | Cubierto |
+| FR-008 | Edge case "cambio concurrente" | `tests/integration/OrderStatusConcurrencyTest.java` | Cubierto |
+| FR-009 | (decisión explícita: sin auditoría de autor/fecha) | N/A — decisión registrada en `spec.md` §Clarifications, no requiere test | Cubierto (por decisión, no por test) |
+
+### Success Criteria
+
+| SC | Test/tarea | Estado |
+|---|---|---|
+| SC-001 | `tests/integration/OrderStartByTechnicianTest.java` | Cubierto |
+| SC-002 | `tests/integration/OrderStartWrongTechnicianTest.java`, `tests/integration/OrderStartWrongRoleTest.java`, `tests/integration/OrderStatusManualForbiddenForTechnicianTest.java` | Cubierto |
+| SC-003 | `tests/integration/OrderStatusManualForwardTest.java` | Cubierto |
+| SC-004 | `tests/integration/OrderStatusManualBackwardTest.java`, `tests/integration/OrderStatusManualToDraftUnassignsTest.java` | Cubierto |
+| SC-005 | `tests/integration/OrderStatusManualNonAdjacentTest.java` | Cubierto |
+
+### Huérfanos
+
+Ninguno detectado — los 15 archivos de test nuevos bajo `tests/contract/` y
+`tests/integration/`, y las adiciones a `order-detail.component.spec.ts`,
+corresponden a al menos un FR/SC de `spec.md`.
+
+### Resumen
+
+- **Cubierto**: 9/9 (9 FRs + 5 SCs, contando FR-009 como cubierto por
+  decisión explícita) = 100%.
+- Checklist de calidad (`checklists/general.md`): 5 ítems quedaron
+  aceptados explícitamente como hueco (CHK004, CHK006, CHK008, CHK014,
+  CHK017 — decisiones intencionales, no olvidos), ninguno afecta a la
+  cobertura de FR/SC reportada aquí.
+- Hallazgo real de `/speckit.analyze` (C1: faltaba la tarea de frontend
+  para el control de corrección manual de estado en US2) corregido antes
+  de implementar, añadiendo T022a/T022b a `tasks.md`.

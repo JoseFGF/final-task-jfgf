@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { OrderDetailComponent } from './order-detail.component';
 import { OrderApiService } from './order-api.service';
 import { OrderDetail, OrderStatus } from './order.model';
@@ -173,6 +173,27 @@ describe('OrderDetailComponent', () => {
 
       expect(fixture.componentInstance.canStartWork()).toBeFalse();
       expect(fixture.nativeElement.textContent).not.toContain('Iniciar trabajo');
+    });
+
+    it('deshabilita el botón mientras la petición está en curso y lo reactiva al terminar', () => {
+      configure({ ...baseOrder, status: 'assigned' }, (role) => role === 'TECHNICIAN');
+      const statusChange$ = new Subject<OrderDetail>();
+      orderApiSpy.changeOrderStatus.and.returnValue(statusChange$);
+
+      fixture.detectChanges();
+      const button = Array.from<HTMLButtonElement>(
+        fixture.nativeElement.querySelectorAll('button'),
+      ).find((el) => el.textContent?.includes('Iniciar trabajo'))!;
+
+      button.click();
+      fixture.detectChanges();
+      expect(button.disabled).toBeTrue();
+
+      statusChange$.next({ ...baseOrder, status: 'in_progress' });
+      statusChange$.complete();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.statusChangeSubmitting()).toBeFalse();
     });
   });
 
