@@ -154,8 +154,17 @@ Ninguno detectado — todos los tests nuevos bajo `tests/contract/` y
 ## Feature: `specs/004-order-state-transitions/`
 
 Actualizado tras `/speckit.implement` (US1-US2 + Polish T023-T028): todos los
-tests referenciados abajo existen como código real y pasan (136/136 backend
-`mvn test`, 71/71 frontend `ng test --watch=false`).
+tests referenciados abajo existen como código real y pasan (138/138 backend
+`mvn test`, 73/73 frontend `ng test --watch=false`).
+
+Hallazgos de code review (Polish) ya corregidos y commiteados: `OrderStatusService`
+no exigía un technician ya asignado antes de mover manualmente `draft →
+assigned` (contradecía `data-model.md`; corregido con 422 + nuevo test
+`OrderStatusManualDraftToAssignedRequiresTechnicianTest`), import `Role` sin
+usar, y falta de estado "en curso"/deshabilitado en los botones de cambio de
+estado del frontend (regresión frente al patrón `submitting` ya usado en
+`review.component.ts`/`execution-form.component.ts`; corregido con la señal
+`statusChangeSubmitting`).
 
 ### Requisitos Funcionales
 
@@ -183,9 +192,11 @@ tests referenciados abajo existen como código real y pasan (136/136 backend
 
 ### Huérfanos
 
-Ninguno detectado — los 15 archivos de test nuevos bajo `tests/contract/` y
-`tests/integration/`, y las adiciones a `order-detail.component.spec.ts`,
-corresponden a al menos un FR/SC de `spec.md`.
+Ninguno detectado — los 16 archivos de test nuevos bajo `tests/contract/` y
+`tests/integration/` (15 de Implement + 1 de Polish,
+`OrderStatusManualDraftToAssignedRequiresTechnicianTest`), y las adiciones a
+`order-detail.component.spec.ts`/`order-api.service.spec.ts`, corresponden a
+al menos un FR/SC de `spec.md`.
 
 ### Resumen
 
