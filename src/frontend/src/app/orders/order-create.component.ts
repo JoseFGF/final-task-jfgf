@@ -41,7 +41,11 @@ export class OrderCreateComponent {
   private readonly orderApi = inject(OrderApiService);
 
   get canSubmit(): boolean {
-    return this.form.valid && !this.submitting();
+    return (
+      this.form.valid &&
+      this.form.controls.description.value.trim().length > 0 &&
+      !this.submitting()
+    );
   }
 
   create(): void {

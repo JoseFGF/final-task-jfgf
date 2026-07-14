@@ -41,6 +41,16 @@ describe('OrderCreateComponent', () => {
     expect(component.canSubmit).toBeFalse();
   });
 
+  it('no permite enviar una descripción con solo espacios en blanco', () => {
+    const component = fixture.componentInstance;
+    component.form.controls.description.setValue('   ');
+
+    expect(component.canSubmit).toBeFalse();
+    component.create();
+
+    expect(orderApiSpy.createOrder).not.toHaveBeenCalled();
+  });
+
   it('crea la orden solo con descripción y navega al detalle', () => {
     orderApiSpy.createOrder.and.returnValue(of(createdOrder));
     spyOn(router, 'navigate').and.resolveTo(true);
