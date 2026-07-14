@@ -25,7 +25,8 @@ describe('OrderApiService', () => {
       {
         id: 'order-1',
         status: 'assigned',
-        assignedTechnicianId: 'tech-1',
+        assignedTechnicianEmail: 'tecnico@fieldops.com',
+        description: 'Revisión de panel eléctrico',
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-01-01T00:00:00Z',
       },
@@ -44,7 +45,8 @@ describe('OrderApiService', () => {
     const mockDetail: OrderDetail = {
       id: 'order-1',
       status: 'in_progress',
-      assignedTechnicianId: 'tech-1',
+      assignedTechnicianEmail: 'tecnico@fieldops.com',
+      description: 'Revisión de panel eléctrico',
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z',
       executionNote: null,
@@ -92,13 +94,60 @@ describe('OrderApiService', () => {
     req.flush({});
   });
 
-  it('reassignOrder hace POST a /api/v1/orders/{id}/reassignment con newTechnicianId', () => {
-    service.reassignOrder('order-1', 'tech-2').subscribe();
+  it('reassignOrder hace POST a /api/v1/orders/{id}/reassignment con newTechnicianEmail', () => {
+    service.reassignOrder('order-1', 'nuevo.tecnico@fieldops.com').subscribe();
 
     const req = httpTesting.expectOne('/api/v1/orders/order-1/reassignment');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ newTechnicianId: 'tech-2' });
+    expect(req.request.body).toEqual({ newTechnicianEmail: 'nuevo.tecnico@fieldops.com' });
     req.flush({});
+  });
+
+  it('createOrder hace POST a /api/v1/orders con description y technicianEmail opcional', () => {
+    const mockDetail: OrderDetail = {
+      id: 'order-2',
+      status: 'draft',
+      assignedTechnicianEmail: null,
+      description: 'Instalación de equipo',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+      executionNote: null,
+      evidencePhotoIds: [],
+      rejectionComment: null,
+    };
+
+    service.createOrder('Instalación de equipo').subscribe((order) => {
+      expect(order).toEqual(mockDetail);
+    });
+
+    const req = httpTesting.expectOne('/api/v1/orders');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ description: 'Instalación de equipo' });
+    req.flush(mockDetail);
+  });
+
+  it('createOrder incluye technicianEmail cuando se especifica', () => {
+    service.createOrder('Instalación de equipo', 'tecnico@fieldops.com').subscribe();
+
+    const req = httpTesting.expectOne('/api/v1/orders');
+    expect(req.request.body).toEqual({
+      description: 'Instalación de equipo',
+      technicianEmail: 'tecnico@fieldops.com',
+    });
+    req.flush({});
+  });
+
+  it('getEvidencePhoto hace GET a /api/v1/orders/{id}/evidence-photos/{photoId} como blob', () => {
+    const mockBlob = new Blob(['contenido'], { type: 'image/jpeg' });
+
+    service.getEvidencePhoto('order-1', 'photo-1').subscribe((blob) => {
+      expect(blob).toEqual(mockBlob);
+    });
+
+    const req = httpTesting.expectOne('/api/v1/orders/order-1/evidence-photos/photo-1');
+    expect(req.request.method).toBe('GET');
+    expect(req.request.responseType).toBe('blob');
+    req.flush(mockBlob);
   });
 
   it('getIncidentSummary hace POST a /api/v1/orders/{id}/incident-summary y devuelve sufficient/summary', () => {

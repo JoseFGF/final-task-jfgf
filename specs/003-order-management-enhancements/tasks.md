@@ -69,10 +69,10 @@ cerrar esta fase.
 - [X] T009 [US1] `OrderController.reassignOrder`: pasar `request.newTechnicianEmail()` en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T008)
 - [X] T010 [P] [US1] `OrderSummaryResponse`: sustituir `assignedTechnicianId` (UUID) por `assignedTechnicianEmail` (String, desde `order.getAssignedTechnician().getEmail()`) en `src/backend/src/main/java/com/fieldops/dto/OrderSummaryResponse.java`
 - [X] T011 [P] [US1] `OrderDetailResponse`: mismo cambio en `src/backend/src/main/java/com/fieldops/dto/OrderDetailResponse.java`
-- [ ] T012 [P] [US1] Frontend: `OrderSummary`/`OrderDetail` — sustituir `assignedTechnicianId` por `assignedTechnicianEmail` en `src/frontend/src/app/orders/order.model.ts`
-- [ ] T013 [US1] Frontend: `OrderApiService.reassignOrder(orderId, newTechnicianEmail)` — renombrar parámetro y clave del body en `src/frontend/src/app/orders/order-api.service.ts` (depende de T012)
-- [ ] T014 [US1] Frontend: `ReassignmentComponent` — sustituir `UUID_PATTERN`/label "UUID del nuevo technician" por validación de email (`Validators.email`) y label/placeholder acordes en `src/frontend/src/app/orders/reassignment.component.ts` y `reassignment.component.html` (depende de T013)
-- [ ] T015 [US1] Frontend: mostrar `currentOrder.assignedTechnicianEmail` (no `assignedTechnicianId`) como "Técnico actual" (SC-006) en `src/frontend/src/app/orders/reassignment.component.html` y en `src/frontend/src/app/orders/order-detail.component.html` (depende de T012)
+- [X] T012 [P] [US1] Frontend: `OrderSummary`/`OrderDetail` — sustituir `assignedTechnicianId` por `assignedTechnicianEmail` en `src/frontend/src/app/orders/order.model.ts`
+- [X] T013 [US1] Frontend: `OrderApiService.reassignOrder(orderId, newTechnicianEmail)` — renombrar parámetro y clave del body en `src/frontend/src/app/orders/order-api.service.ts` (depende de T012)
+- [X] T014 [US1] Frontend: `ReassignmentComponent` — sustituir `UUID_PATTERN`/label "UUID del nuevo technician" por validación de email (`Validators.email`) y label/placeholder acordes en `src/frontend/src/app/orders/reassignment.component.ts` y `reassignment.component.html` (depende de T013)
+- [X] T015 [US1] Frontend: mostrar `currentOrder.assignedTechnicianEmail` (no `assignedTechnicianId`) como "Técnico actual" (SC-006) en `src/frontend/src/app/orders/reassignment.component.html` y en `src/frontend/src/app/orders/order-detail.component.html` (depende de T012)
 
 **Checkpoint**: US1 funcional e independientemente verificable.
 
@@ -88,7 +88,7 @@ cerrar esta fase.
 
 - [X] T016 [P] [US2] Integration test: reasignar (asignar) una orden en `draft` con email de technician válido → 200, `status` pasa a `assigned` (FR-004, FR-005, SC-003) en `tests/integration/ReassignmentDraftInitialAssignmentTest.java`
 - [X] T017 [P] [US2] Confirmar (regresión) que reasignar una orden `closed` sigue devolviendo 409 tras el cambio de T019 (FR-006), en `tests/integration/ReassignmentClosedTest.java` (ya existe de la feature 001; ampliar si hace falta)
-- [ ] T018 [P] [US2] Frontend unit test: `OrderDetailComponent.canReassign()` ya devuelve `true` para `status === 'draft'` — test de regresión que documenta que el frontend NO necesita cambios para esta historia (el bug real estaba solo en el backend) en `src/frontend/src/app/orders/order-detail.component.spec.ts`
+- [X] T018 [P] [US2] Frontend unit test: `OrderDetailComponent.canReassign()` ya devuelve `true` para `status === 'draft'` — test de regresión que documenta que el frontend NO necesita cambios para esta historia (el bug real estaba solo en el backend) en `src/frontend/src/app/orders/order-detail.component.spec.ts`
 
 ### Implementation for User Story 2
 
@@ -121,10 +121,10 @@ cerrar esta fase.
 - [X] T029 [US3] `OrderService.createOrder(currentUser, request)`: valida rol dispatcher (defensa en profundidad), rechaza `description` en blanco tras recortar espacios (FR-007a), crea la orden en `draft` o resuelve `technicianEmail` (reutiliza `findByEmailIgnoreCase`, mismo criterio 422 que T008) y la crea directamente en `assigned` fijando `lastReassignedBy`/`lastReassignedAt` (FR-007c) en `src/backend/src/main/java/com/fieldops/service/OrderService.java` (depende de T001, T027, T028)
 - [X] T030 [US3] `OrderController`: `POST /orders` con `@PreAuthorize("hasRole('DISPATCHER')")` en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T029)
 - [X] T031 [P] [US3] `OrderSummaryResponse` / `OrderDetailResponse`: añadir campo `description` en `src/backend/src/main/java/com/fieldops/dto/OrderSummaryResponse.java` y `OrderDetailResponse.java` (depende de T027)
-- [ ] T032 [P] [US3] Frontend: añadir `description` a `OrderSummary`/`OrderDetail` y definir `CreateOrderRequest` en `src/frontend/src/app/orders/order.model.ts`
-- [ ] T033 [US3] Frontend: `OrderApiService.createOrder(description, technicianEmail?)` (`POST /orders`) en `src/frontend/src/app/orders/order-api.service.ts` (depende de T032)
-- [ ] T034 [US3] Frontend: nuevo `OrderCreateComponent` (formulario: descripción obligatoria + email de technician opcional) y ruta `orders/new` protegida por `roleGuard('DISPATCHER')` en `src/frontend/src/app/orders/order-create.component.ts`, `order-create.component.html` y `src/frontend/src/app/app.routes.ts` (depende de T033)
-- [ ] T035 [P] [US3] Frontend: enlace "Crear orden" visible solo para dispatcher en el listado en `src/frontend/src/app/orders/order-list.component.html` (depende de T034)
+- [X] T032 [P] [US3] Frontend: añadir `description` a `OrderSummary`/`OrderDetail` y definir `CreateOrderRequest` en `src/frontend/src/app/orders/order.model.ts`
+- [X] T033 [US3] Frontend: `OrderApiService.createOrder(description, technicianEmail?)` (`POST /orders`) en `src/frontend/src/app/orders/order-api.service.ts` (depende de T032)
+- [X] T034 [US3] Frontend: nuevo `OrderCreateComponent` (formulario: descripción obligatoria + email de technician opcional) y ruta `orders/new` protegida por `roleGuard('DISPATCHER')` en `src/frontend/src/app/orders/order-create.component.ts`, `order-create.component.html` y `src/frontend/src/app/app.routes.ts` (depende de T033)
+- [X] T035 [P] [US3] Frontend: enlace "Crear orden" visible solo para dispatcher en el listado en `src/frontend/src/app/orders/order-list.component.html` (depende de T034)
 
 **Checkpoint**: US1-US3 cubren asignación por email (incluida inicial) + creación de órdenes.
 
@@ -141,7 +141,7 @@ cerrar esta fase.
 - [X] T036 [P] [US4] Contract test `GET /orders/{orderId}/evidence-photos/{photoId}` (200/401/403/404) en `tests/contract/EvidencePhotoContentContractTest.java`
 - [X] T037 [P] [US4] Integration test: dispatcher/supervisor obtienen el binario de cualquier foto; technician asignado obtiene las de su orden; technician no asignado → 403 (FR-009a) en `tests/integration/EvidencePhotoAccessTest.java`
 - [X] T038 [P] [US4] Integration test: petición sin `Authorization` → 401 aunque el `photoId` sea válido (FR-009a) en `tests/integration/EvidencePhotoUnauthenticatedTest.java`
-- [ ] T039 [P] [US4] Frontend unit test: `OrderDetailComponent` renderiza una imagen por cada `evidencePhotoIds` y ninguna sección de fotos cuando la lista está vacía (FR-009, FR-010) en `src/frontend/src/app/orders/order-detail.component.spec.ts`
+- [X] T039 [P] [US4] Frontend unit test: `OrderDetailComponent` renderiza una imagen por cada `evidencePhotoIds` y ninguna sección de fotos cuando la lista está vacía (FR-009, FR-010) en `src/frontend/src/app/orders/order-detail.component.spec.ts`
 
 ### Implementation for User Story 4
 
@@ -149,8 +149,8 @@ cerrar esta fase.
 - [X] T041 [US4] `OrderService`: extraer un método reutilizable (p. ej. `Order requireOrderVisibleTo(currentUser, orderId)`) a partir de la lógica ya usada por `getOrderDetail` (`findOrderOrThrow` + `requireVisibleTo`), para que lo reutilice el servicio de fotos en `src/backend/src/main/java/com/fieldops/service/OrderService.java`
 - [X] T042 [US4] `EvidencePhotoService.getPhotoContent(currentUser, orderId, photoId)`: reutiliza T041 para la autorización, localiza la foto entre `order.getEvidencePhotos()` (404 si no pertenece a la orden) y devuelve su `Resource` + `contentType` (ADR-006) en `src/backend/src/main/java/com/fieldops/service/EvidencePhotoService.java` (depende de T040, T041)
 - [X] T043 [US4] `OrderController`: `GET /orders/{orderId}/evidence-photos/{photoId}` devolviendo `ResponseEntity<Resource>` con el `Content-Type` correcto en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T042)
-- [ ] T044 [P] [US4] Frontend: `OrderApiService.getEvidencePhotoUrl(orderId, photoId)` o método que obtenga el blob autenticado (según cómo el interceptor JWT ya adjunta el header) en `src/frontend/src/app/orders/order-api.service.ts`
-- [ ] T045 [US4] Frontend: `OrderDetailComponent`/`order-detail.component.html` — renderizar una imagen por cada foto de `evidencePhotoIds` (o vacío si no hay ninguna, FR-009, FR-010, SC-005) en `src/frontend/src/app/orders/order-detail.component.ts` y `order-detail.component.html` (depende de T044)
+- [X] T044 [P] [US4] Frontend: `OrderApiService.getEvidencePhotoUrl(orderId, photoId)` o método que obtenga el blob autenticado (según cómo el interceptor JWT ya adjunta el header) en `src/frontend/src/app/orders/order-api.service.ts`
+- [X] T045 [US4] Frontend: `OrderDetailComponent`/`order-detail.component.html` — renderizar una imagen por cada foto de `evidencePhotoIds` (o vacío si no hay ninguna, FR-009, FR-010, SC-005) en `src/frontend/src/app/orders/order-detail.component.ts` y `order-detail.component.html` (depende de T044)
 
 **Checkpoint**: Las 4 historias de usuario funcionan de forma independiente y en conjunto.
 

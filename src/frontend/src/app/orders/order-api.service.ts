@@ -1,7 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { IncidentSummaryResult, OrderDetail, OrderSummary, ReviewDecision } from './order.model';
+import {
+  CreateOrderRequest,
+  IncidentSummaryResult,
+  OrderDetail,
+  OrderSummary,
+  ReviewDecision,
+} from './order.model';
 
 const ORDERS_BASE_URL = '/api/v1/orders';
 
@@ -57,9 +63,35 @@ export class OrderApiService {
    * `in_progress` o `pending_review`; el backend es la autoridad final sobre
    * el rol (DISPATCHER) y el estado de la orden (FR-014).
    */
-  reassignOrder(orderId: string, newTechnicianId: string): Observable<OrderDetail> {
+  reassignOrder(orderId: string, newTechnicianEmail: string): Observable<OrderDetail> {
     return this.http.post<OrderDetail>(`${ORDERS_BASE_URL}/${orderId}/reassignment`, {
-      newTechnicianId,
+      newTechnicianEmail,
+    });
+  }
+
+  /**
+   * `POST /orders` — crea una nueva orden (US3). Solo DISPATCHER. El
+   * technician asignado es opcional en la creación.
+   */
+  createOrder(description: string, technicianEmail?: string): Observable<OrderDetail> {
+    const body: CreateOrderRequest = {
+      description,
+      ...(technicianEmail ? { technicianEmail } : {}),
+    };
+    return this.http.post<OrderDetail>(ORDERS_BASE_URL, body);
+  }
+
+  /**
+   * `GET /orders/{orderId}/evidence-photos/{photoId}` — descarga el binario
+   * de una foto de evidencia (US4). Requiere el mismo `Authorization: Bearer
+   * <jwt>` que el resto de la API; a diferencia de un `<img src="...">`
+   * directo, pasar por `HttpClient` garantiza que el interceptor adjunte el
+   * header, por eso se pide como blob y se convierte a Object URL en el
+   * componente.
+   */
+  getEvidencePhoto(orderId: string, photoId: string): Observable<Blob> {
+    return this.http.get(`${ORDERS_BASE_URL}/${orderId}/evidence-photos/${photoId}`, {
+      responseType: 'blob',
     });
   }
 

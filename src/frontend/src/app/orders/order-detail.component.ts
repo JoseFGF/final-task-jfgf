@@ -1,6 +1,8 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { OrderApiService } from './order-api.service';
 import { OrderDetail } from './order.model';
 import { AuthService } from '../core/auth.service';
@@ -16,10 +18,13 @@ import { AuthService } from '../core/auth.service';
   imports: [CommonModule, RouterLink],
   templateUrl: './order-detail.component.html',
 })
-export class OrderDetailComponent implements OnInit {
+export class OrderDetailComponent implements OnInit, OnDestroy {
   readonly order = signal<OrderDetail | null>(null);
   readonly loading = signal<boolean>(true);
   readonly errorMessage = signal<string | null>(null);
+
+  /** Object URLs (US4) generados a partir de los blobs de evidencia fotográfica. */
+  readonly photoUrls = signal<string[]>([]);
 
   private orderId = '';
 
@@ -74,11 +79,45 @@ export class OrderDetailComponent implements OnInit {
       next: (order) => {
         this.order.set(order);
         this.loading.set(false);
+        this.loadEvidencePhotos(order);
       },
       error: () => {
         this.errorMessage.set('No se pudo cargar el detalle de la orden.');
         this.loading.set(false);
       },
     });
+  }
+
+  ngOnDestroy(): void {
+    this.revokePhotoUrls();
+  }
+
+  /**
+   * Descarga cada foto de evidencia como blob autenticado (US4) y la expone
+   * como Object URL para poder usarla en un `<img [src]>`. Un `<img src="...">`
+   * directo al endpoint no enviaría el header `Authorization`.
+   */
+  private loadEvidencePhotos(order: OrderDetail): void {
+    this.revokePhotoUrls();
+
+    if (order.evidencePhotoIds.length === 0) {
+      this.photoUrls.set([]);
+      return;
+    }
+
+    forkJoin(
+      order.evidencePhotoIds.map((photoId) =>
+        this.orderApi.getEvidencePhoto(order.id, photoId).pipe(catchError(() => of(null))),
+      ),
+    ).subscribe((blobs) => {
+      const urls = blobs
+        .filter((blob): blob is Blob => blob !== null)
+        .map((blob) => URL.createObjectURL(blob));
+      this.photoUrls.set(urls);
+    });
+  }
+
+  private revokePhotoUrls(): void {
+    this.photoUrls().forEach((url) => URL.revokeObjectURL(url));
   }
 }

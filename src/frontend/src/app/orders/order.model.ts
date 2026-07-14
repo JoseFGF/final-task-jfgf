@@ -7,7 +7,8 @@ export type OrderStatus = 'draft' | 'assigned' | 'in_progress' | 'pending_review
 export interface OrderSummary {
   id: string;
   status: OrderStatus;
-  assignedTechnicianId: string | null;
+  assignedTechnicianEmail: string | null;
+  description: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -16,6 +17,12 @@ export interface OrderDetail extends OrderSummary {
   executionNote: string | null;
   evidencePhotoIds: string[];
   rejectionComment: string | null;
+}
+
+/** Body de `POST /orders` (US3): solo DISPATCHER puede crear órdenes. */
+export interface CreateOrderRequest {
+  description: string;
+  technicianEmail?: string;
 }
 
 /** Decisión de revisión de un supervisor (`POST /orders/{orderId}/review`). */

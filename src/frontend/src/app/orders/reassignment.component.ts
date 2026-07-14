@@ -6,22 +6,19 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { OrderApiService } from './order-api.service';
 import { ApiErrorResponse, OrderDetail } from './order.model';
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 interface ReassignmentFormValue {
-  newTechnicianId: FormControl<string>;
+  newTechnicianEmail: FormControl<string>;
 }
 
 /**
  * Reasignación de una orden a otro technician por parte de un dispatcher
- * (US4, FR-013, FR-014, FR-021).
+ * (US1/US4, FR-013, FR-014, FR-021).
  *
  * Limitación conocida de este slice: no existe un endpoint para listar
- * technicians (`contracts/openapi.yaml`), así que se pide el UUID del nuevo
+ * technicians (`contracts/openapi.yaml`), así que se pide el email del nuevo
  * technician mediante un input de texto en vez de un select poblado desde el
  * backend. La validación de formato aquí es solo UX; el backend es quien
- * valida realmente que el UUID exista y sea un TECHNICIAN válido.
+ * valida realmente que el email exista y sea un TECHNICIAN válido.
  */
 @Component({
   selector: 'app-reassignment',
@@ -31,9 +28,9 @@ interface ReassignmentFormValue {
 })
 export class ReassignmentComponent implements OnInit {
   readonly form = new FormGroup<ReassignmentFormValue>({
-    newTechnicianId: new FormControl('', {
+    newTechnicianEmail: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.pattern(UUID_PATTERN)],
+      validators: [Validators.required, Validators.email],
     }),
   });
 
@@ -82,9 +79,9 @@ export class ReassignmentComponent implements OnInit {
     this.submitting.set(true);
     this.submitErrorMessage.set(null);
 
-    const newTechnicianId = this.form.controls.newTechnicianId.value.trim();
+    const newTechnicianEmail = this.form.controls.newTechnicianEmail.value.trim();
 
-    this.orderApi.reassignOrder(this.orderId, newTechnicianId).subscribe({
+    this.orderApi.reassignOrder(this.orderId, newTechnicianEmail).subscribe({
       next: () => {
         this.submitting.set(false);
         void this.router.navigate(['/orders', this.orderId]);
