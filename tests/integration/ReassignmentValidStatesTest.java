@@ -32,6 +32,7 @@ class ReassignmentValidStatesTest extends BaseIntegrationTest {
   private static final UUID TECHNICIAN_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
   private static final UUID OTHER_TECHNICIAN_ID =
       UUID.fromString("44444444-4444-4444-4444-444444444444");
+  private static final String OTHER_TECHNICIAN_EMAIL = "technician2@fieldops.test";
 
   @Autowired private MockMvc mockMvc;
   @Autowired private JwtService jwtService;
@@ -58,9 +59,9 @@ class ReassignmentValidStatesTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
-                        Map.of("newTechnicianId", OTHER_TECHNICIAN_ID.toString()))))
+                        Map.of("newTechnicianEmail", OTHER_TECHNICIAN_EMAIL))))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.assignedTechnicianId").value(OTHER_TECHNICIAN_ID.toString()))
+        .andExpect(jsonPath("$.assignedTechnicianEmail").value(OTHER_TECHNICIAN_EMAIL))
         .andExpect(jsonPath("$.status").value(status.name()));
 
     Order reloaded = orderRepository.findById(order.getId()).orElseThrow();

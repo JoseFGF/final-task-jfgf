@@ -1,11 +1,14 @@
 package com.fieldops.controller;
 
+import com.fieldops.dto.CreateOrderRequest;
 import com.fieldops.dto.IncidentSummaryResponse;
 import com.fieldops.dto.OrderDetailResponse;
 import com.fieldops.dto.OrderSummaryResponse;
 import com.fieldops.dto.ReassignmentRequest;
 import com.fieldops.dto.ReviewRequest;
 import com.fieldops.security.CurrentUser;
+import com.fieldops.service.EvidencePhotoService;
+import com.fieldops.service.EvidencePhotoService.PhotoContent;
 import com.fieldops.service.ExecutionService;
 import com.fieldops.service.IncidentSummaryService;
 import com.fieldops.service.OrderService;
@@ -14,7 +17,11 @@ import com.fieldops.service.ReviewService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,18 +48,21 @@ public class OrderController {
   private final ReviewService reviewService;
   private final ReassignmentService reassignmentService;
   private final IncidentSummaryService incidentSummaryService;
+  private final EvidencePhotoService evidencePhotoService;
 
   public OrderController(
       OrderService orderService,
       ExecutionService executionService,
       ReviewService reviewService,
       ReassignmentService reassignmentService,
-      IncidentSummaryService incidentSummaryService) {
+      IncidentSummaryService incidentSummaryService,
+      EvidencePhotoService evidencePhotoService) {
     this.orderService = orderService;
     this.executionService = executionService;
     this.reviewService = reviewService;
     this.reassignmentService = reassignmentService;
     this.incidentSummaryService = incidentSummaryService;
+    this.evidencePhotoService = evidencePhotoService;
   }
 
   @GetMapping
@@ -61,11 +71,30 @@ public class OrderController {
     return orderService.listVisibleOrders(CurrentUser.from(authentication));
   }
 
+  @PostMapping
+  @PreAuthorize("hasRole('DISPATCHER')")
+  public ResponseEntity<OrderDetailResponse> createOrder(
+      @Valid @RequestBody CreateOrderRequest request, Authentication authentication) {
+    OrderDetailResponse created = orderService.createOrder(CurrentUser.from(authentication), request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(created);
+  }
+
   @GetMapping("/{orderId}")
   @PreAuthorize("hasAnyRole('DISPATCHER', 'TECHNICIAN', 'SUPERVISOR')")
   public OrderDetailResponse getOrder(
       @PathVariable UUID orderId, Authentication authentication) {
     return orderService.getOrderDetail(CurrentUser.from(authentication), orderId);
+  }
+
+  @GetMapping("/{orderId}/evidence-photos/{photoId}")
+  @PreAuthorize("hasAnyRole('DISPATCHER', 'TECHNICIAN', 'SUPERVISOR')")
+  public ResponseEntity<Resource> getEvidencePhoto(
+      @PathVariable UUID orderId, @PathVariable UUID photoId, Authentication authentication) {
+    PhotoContent photo =
+        evidencePhotoService.getPhotoContent(CurrentUser.from(authentication), orderId, photoId);
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_TYPE, photo.contentType())
+        .body(photo.resource());
   }
 
   @PostMapping(path = "/{orderId}/execution", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -99,7 +128,7 @@ public class OrderController {
       @Valid @RequestBody ReassignmentRequest request,
       Authentication authentication) {
     return reassignmentService.reassign(
-        CurrentUser.from(authentication), orderId, request.newTechnicianId());
+        CurrentUser.from(authentication), orderId, request.newTechnicianEmail());
   }
 
   @PostMapping("/{orderId}/incident-summary")

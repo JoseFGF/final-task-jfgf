@@ -36,6 +36,8 @@ class ReassignmentConcurrencyTest extends BaseIntegrationTest {
   private static final UUID TECHNICIAN_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
   private static final UUID OTHER_TECHNICIAN_ID =
       UUID.fromString("44444444-4444-4444-4444-444444444444");
+  private static final String TECHNICIAN_EMAIL = "technician@fieldops.test";
+  private static final String OTHER_TECHNICIAN_EMAIL = "technician2@fieldops.test";
 
   @Autowired private MockMvc mockMvc;
   @Autowired private JwtService jwtService;
@@ -57,9 +59,9 @@ class ReassignmentConcurrencyTest extends BaseIntegrationTest {
     ExecutorService executor = Executors.newFixedThreadPool(2);
     try {
       Future<Integer> first =
-          executor.submit(() -> reassign(order.getId(), token, TECHNICIAN_ID, startGate));
+          executor.submit(() -> reassign(order.getId(), token, TECHNICIAN_EMAIL, startGate));
       Future<Integer> second =
-          executor.submit(() -> reassign(order.getId(), token, OTHER_TECHNICIAN_ID, startGate));
+          executor.submit(() -> reassign(order.getId(), token, OTHER_TECHNICIAN_EMAIL, startGate));
 
       startGate.countDown();
 
@@ -78,7 +80,7 @@ class ReassignmentConcurrencyTest extends BaseIntegrationTest {
     assertThat(reloaded.getStatus()).isEqualTo(OrderStatus.assigned);
   }
 
-  private int reassign(UUID orderId, String token, UUID newTechnicianId, CountDownLatch startGate)
+  private int reassign(UUID orderId, String token, String newTechnicianEmail, CountDownLatch startGate)
       throws Exception {
     startGate.await();
     return mockMvc
@@ -88,7 +90,7 @@ class ReassignmentConcurrencyTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
-                        Map.of("newTechnicianId", newTechnicianId.toString()))))
+                        Map.of("newTechnicianEmail", newTechnicianEmail))))
         .andReturn()
         .getResponse()
         .getStatus();

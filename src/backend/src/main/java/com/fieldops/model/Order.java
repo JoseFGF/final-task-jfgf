@@ -38,6 +38,9 @@ public class Order {
   @JoinColumn(name = "assigned_technician_id")
   private User assignedTechnician;
 
+  @Column(name = "description", columnDefinition = "text")
+  private String description;
+
   @Column(name = "execution_note", columnDefinition = "text")
   private String executionNote;
 
@@ -92,6 +95,14 @@ public class Order {
 
   public void setAssignedTechnician(User assignedTechnician) {
     this.assignedTechnician = assignedTechnician;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
   }
 
   public String getExecutionNote() {

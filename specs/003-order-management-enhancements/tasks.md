@@ -1,4 +1,4 @@
----
+﻿---
 
 description: "Task list for 003-order-management-enhancements"
 ---
@@ -57,18 +57,18 @@ cerrar esta fase.
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Actualizar contract test de `POST /orders/{orderId}/reassignment` para el nuevo body `{"newTechnicianEmail": "..."}` y los códigos 200/401/403/404/409/422 en `tests/contract/ReassignmentContractTest.java`
-- [ ] T004 [P] [US1] Integration test: reasignar con email válido en distinta capitalización y con espacios al principio/final → 200, technician correcto resuelto (FR-003, SC-001) en `tests/integration/ReassignmentByEmailTest.java`
-- [ ] T005 [P] [US1] Integration test: reasignar con email que no corresponde a ningún technician (no existe, o existe con otro rol) → 422 (FR-002, SC-002) en `tests/integration/ReassignmentInvalidEmailTest.java`
-- [ ] T006 [P] [US1] Actualizar contract tests de `GET /orders` y `GET /orders/{orderId}` para verificar que la respuesta trae `assignedTechnicianEmail` y ya NO trae `assignedTechnicianId` (FR-003a) en `tests/contract/OrdersListContractTest.java` y `tests/contract/OrderDetailContractTest.java`
+- [X] T003 [P] [US1] Actualizar contract test de `POST /orders/{orderId}/reassignment` para el nuevo body `{"newTechnicianEmail": "..."}` y los códigos 200/401/403/404/409/422 en `tests/contract/ReassignmentContractTest.java`
+- [X] T004 [P] [US1] Integration test: reasignar con email válido en distinta capitalización y con espacios al principio/final → 200, technician correcto resuelto (FR-003, SC-001) en `tests/integration/ReassignmentByEmailTest.java`
+- [X] T005 [P] [US1] Integration test: reasignar con email que no corresponde a ningún technician (no existe, o existe con otro rol) → 422 (FR-002, SC-002) en `tests/integration/ReassignmentInvalidEmailTest.java`
+- [X] T006 [P] [US1] Actualizar contract tests de `GET /orders` y `GET /orders/{orderId}` para verificar que la respuesta trae `assignedTechnicianEmail` y ya NO trae `assignedTechnicianId` (FR-003a) en `tests/contract/OrdersListContractTest.java` y `tests/contract/OrderDetailContractTest.java`
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] `ReassignmentRequest`: sustituir `newTechnicianId` (UUID) por `newTechnicianEmail` (String, `@NotBlank`) en `src/backend/src/main/java/com/fieldops/dto/ReassignmentRequest.java`
-- [ ] T008 [US1] `ReassignmentService.doReassign`: resolver el technician vía `userRepository.findByEmailIgnoreCase(email.strip())` (FR-003); lanzar `ValidationException` (422) si no existe o su rol no es `TECHNICIAN` (FR-002) — sustituye el `findById`/`NotFoundException` actual en `src/backend/src/main/java/com/fieldops/service/ReassignmentService.java` (depende de T001, T007)
-- [ ] T009 [US1] `OrderController.reassignOrder`: pasar `request.newTechnicianEmail()` en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T008)
-- [ ] T010 [P] [US1] `OrderSummaryResponse`: sustituir `assignedTechnicianId` (UUID) por `assignedTechnicianEmail` (String, desde `order.getAssignedTechnician().getEmail()`) en `src/backend/src/main/java/com/fieldops/dto/OrderSummaryResponse.java`
-- [ ] T011 [P] [US1] `OrderDetailResponse`: mismo cambio en `src/backend/src/main/java/com/fieldops/dto/OrderDetailResponse.java`
+- [X] T007 [US1] `ReassignmentRequest`: sustituir `newTechnicianId` (UUID) por `newTechnicianEmail` (String, `@NotBlank`) en `src/backend/src/main/java/com/fieldops/dto/ReassignmentRequest.java`
+- [X] T008 [US1] `ReassignmentService.doReassign`: resolver el technician vía `userRepository.findByEmailIgnoreCase(email.strip())` (FR-003); lanzar `ValidationException` (422) si no existe o su rol no es `TECHNICIAN` (FR-002) — sustituye el `findById`/`NotFoundException` actual en `src/backend/src/main/java/com/fieldops/service/ReassignmentService.java` (depende de T001, T007)
+- [X] T009 [US1] `OrderController.reassignOrder`: pasar `request.newTechnicianEmail()` en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T008)
+- [X] T010 [P] [US1] `OrderSummaryResponse`: sustituir `assignedTechnicianId` (UUID) por `assignedTechnicianEmail` (String, desde `order.getAssignedTechnician().getEmail()`) en `src/backend/src/main/java/com/fieldops/dto/OrderSummaryResponse.java`
+- [X] T011 [P] [US1] `OrderDetailResponse`: mismo cambio en `src/backend/src/main/java/com/fieldops/dto/OrderDetailResponse.java`
 - [ ] T012 [P] [US1] Frontend: `OrderSummary`/`OrderDetail` — sustituir `assignedTechnicianId` por `assignedTechnicianEmail` en `src/frontend/src/app/orders/order.model.ts`
 - [ ] T013 [US1] Frontend: `OrderApiService.reassignOrder(orderId, newTechnicianEmail)` — renombrar parámetro y clave del body en `src/frontend/src/app/orders/order-api.service.ts` (depende de T012)
 - [ ] T014 [US1] Frontend: `ReassignmentComponent` — sustituir `UUID_PATTERN`/label "UUID del nuevo technician" por validación de email (`Validators.email`) y label/placeholder acordes en `src/frontend/src/app/orders/reassignment.component.ts` y `reassignment.component.html` (depende de T013)
@@ -86,13 +86,13 @@ cerrar esta fase.
 
 ### Tests for User Story 2
 
-- [ ] T016 [P] [US2] Integration test: reasignar (asignar) una orden en `draft` con email de technician válido → 200, `status` pasa a `assigned` (FR-004, FR-005, SC-003) en `tests/integration/ReassignmentDraftInitialAssignmentTest.java`
-- [ ] T017 [P] [US2] Confirmar (regresión) que reasignar una orden `closed` sigue devolviendo 409 tras el cambio de T019 (FR-006), en `tests/integration/ReassignmentClosedTest.java` (ya existe de la feature 001; ampliar si hace falta)
+- [X] T016 [P] [US2] Integration test: reasignar (asignar) una orden en `draft` con email de technician válido → 200, `status` pasa a `assigned` (FR-004, FR-005, SC-003) en `tests/integration/ReassignmentDraftInitialAssignmentTest.java`
+- [X] T017 [P] [US2] Confirmar (regresión) que reasignar una orden `closed` sigue devolviendo 409 tras el cambio de T019 (FR-006), en `tests/integration/ReassignmentClosedTest.java` (ya existe de la feature 001; ampliar si hace falta)
 - [ ] T018 [P] [US2] Frontend unit test: `OrderDetailComponent.canReassign()` ya devuelve `true` para `status === 'draft'` — test de regresión que documenta que el frontend NO necesita cambios para esta historia (el bug real estaba solo en el backend) en `src/frontend/src/app/orders/order-detail.component.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] `ReassignmentService.REASSIGNABLE_STATUSES`: añadir `OrderStatus.draft` al `Set` (además de `assigned`, `in_progress`, `pending_review`) en `src/backend/src/main/java/com/fieldops/service/ReassignmentService.java` (depende de T008 — mismo archivo, tarea secuencial)
+- [X] T019 [US2] `ReassignmentService.REASSIGNABLE_STATUSES`: añadir `OrderStatus.draft` al `Set` (además de `assigned`, `in_progress`, `pending_review`) en `src/backend/src/main/java/com/fieldops/service/ReassignmentService.java` (depende de T008 — mismo archivo, tarea secuencial)
 
 **Checkpoint**: US1 + US2 = MVP funcional (asignar/reasignar por email, incluida la asignación inicial sobre `draft`).
 
@@ -106,21 +106,21 @@ cerrar esta fase.
 
 ### Tests for User Story 3
 
-- [ ] T020 [P] [US3] Contract test `POST /orders` (201/401/403/422) en `tests/contract/OrderCreationContractTest.java`
-- [ ] T021 [P] [US3] Integration test: crear con solo `description` → `draft`, sin technician (FR-007, SC-004) en `tests/integration/OrderCreationDraftTest.java`
-- [ ] T022 [P] [US3] Integration test: crear con `description` + `technicianEmail` válido → `assigned`, con `lastReassignedBy`/`lastReassignedAt` fijados al usuario/momento de la creación (FR-007b, FR-007c, SC-004, SC-007) en `tests/integration/OrderCreationAssignedTest.java`
-- [ ] T023 [P] [US3] Integration test: crear sin `description` (ausente, vacía, o solo espacios en blanco) → 422 (FR-007a) en `tests/integration/OrderCreationMissingDescriptionTest.java`
-- [ ] T024 [P] [US3] Integration test: crear como technician o supervisor → 403 (FR-008) en `tests/integration/OrderCreationForbiddenRoleTest.java`
-- [ ] T025 [P] [US3] Integration test: crear con `technicianEmail` que no corresponde a ningún technician → 422 (FR-007b, FR-002) en `tests/integration/OrderCreationInvalidTechnicianTest.java`
+- [X] T020 [P] [US3] Contract test `POST /orders` (201/401/403/422) en `tests/contract/OrderCreationContractTest.java`
+- [X] T021 [P] [US3] Integration test: crear con solo `description` → `draft`, sin technician (FR-007, SC-004) en `tests/integration/OrderCreationDraftTest.java`
+- [X] T022 [P] [US3] Integration test: crear con `description` + `technicianEmail` válido → `assigned`, con `lastReassignedBy`/`lastReassignedAt` fijados al usuario/momento de la creación (FR-007b, FR-007c, SC-004, SC-007) en `tests/integration/OrderCreationAssignedTest.java`
+- [X] T023 [P] [US3] Integration test: crear sin `description` (ausente, vacía, o solo espacios en blanco) → 422 (FR-007a) en `tests/integration/OrderCreationMissingDescriptionTest.java`
+- [X] T024 [P] [US3] Integration test: crear como technician o supervisor → 403 (FR-008) en `tests/integration/OrderCreationForbiddenRoleTest.java`
+- [X] T025 [P] [US3] Integration test: crear con `technicianEmail` que no corresponde a ningún technician → 422 (FR-007b, FR-002) en `tests/integration/OrderCreationInvalidTechnicianTest.java`
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Migración Flyway `ALTER TABLE orders ADD COLUMN description TEXT NULL` (aditiva, sin backfill — ADR-007) en `src/backend/src/main/resources/db/migration/V4__add_order_description.sql`
-- [ ] T027 [US3] `Order`: añadir campo `description` (getter/setter) en `src/backend/src/main/java/com/fieldops/model/Order.java` (depende de T026)
-- [ ] T028 [P] [US3] `CreateOrderRequest` DTO (`description` obligatoria no vacía, `technicianEmail` opcional) en `src/backend/src/main/java/com/fieldops/dto/CreateOrderRequest.java`
-- [ ] T029 [US3] `OrderService.createOrder(currentUser, request)`: valida rol dispatcher (defensa en profundidad), rechaza `description` en blanco tras recortar espacios (FR-007a), crea la orden en `draft` o resuelve `technicianEmail` (reutiliza `findByEmailIgnoreCase`, mismo criterio 422 que T008) y la crea directamente en `assigned` fijando `lastReassignedBy`/`lastReassignedAt` (FR-007c) en `src/backend/src/main/java/com/fieldops/service/OrderService.java` (depende de T001, T027, T028)
-- [ ] T030 [US3] `OrderController`: `POST /orders` con `@PreAuthorize("hasRole('DISPATCHER')")` en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T029)
-- [ ] T031 [P] [US3] `OrderSummaryResponse` / `OrderDetailResponse`: añadir campo `description` en `src/backend/src/main/java/com/fieldops/dto/OrderSummaryResponse.java` y `OrderDetailResponse.java` (depende de T027)
+- [X] T026 [US3] Migración Flyway `ALTER TABLE orders ADD COLUMN description TEXT NULL` (aditiva, sin backfill — ADR-007) en `src/backend/src/main/resources/db/migration/V4__add_order_description.sql`
+- [X] T027 [US3] `Order`: añadir campo `description` (getter/setter) en `src/backend/src/main/java/com/fieldops/model/Order.java` (depende de T026)
+- [X] T028 [P] [US3] `CreateOrderRequest` DTO (`description` obligatoria no vacía, `technicianEmail` opcional) en `src/backend/src/main/java/com/fieldops/dto/CreateOrderRequest.java`
+- [X] T029 [US3] `OrderService.createOrder(currentUser, request)`: valida rol dispatcher (defensa en profundidad), rechaza `description` en blanco tras recortar espacios (FR-007a), crea la orden en `draft` o resuelve `technicianEmail` (reutiliza `findByEmailIgnoreCase`, mismo criterio 422 que T008) y la crea directamente en `assigned` fijando `lastReassignedBy`/`lastReassignedAt` (FR-007c) en `src/backend/src/main/java/com/fieldops/service/OrderService.java` (depende de T001, T027, T028)
+- [X] T030 [US3] `OrderController`: `POST /orders` con `@PreAuthorize("hasRole('DISPATCHER')")` en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T029)
+- [X] T031 [P] [US3] `OrderSummaryResponse` / `OrderDetailResponse`: añadir campo `description` en `src/backend/src/main/java/com/fieldops/dto/OrderSummaryResponse.java` y `OrderDetailResponse.java` (depende de T027)
 - [ ] T032 [P] [US3] Frontend: añadir `description` a `OrderSummary`/`OrderDetail` y definir `CreateOrderRequest` en `src/frontend/src/app/orders/order.model.ts`
 - [ ] T033 [US3] Frontend: `OrderApiService.createOrder(description, technicianEmail?)` (`POST /orders`) en `src/frontend/src/app/orders/order-api.service.ts` (depende de T032)
 - [ ] T034 [US3] Frontend: nuevo `OrderCreateComponent` (formulario: descripción obligatoria + email de technician opcional) y ruta `orders/new` protegida por `roleGuard('DISPATCHER')` en `src/frontend/src/app/orders/order-create.component.ts`, `order-create.component.html` y `src/frontend/src/app/app.routes.ts` (depende de T033)
@@ -138,17 +138,17 @@ cerrar esta fase.
 
 ### Tests for User Story 4
 
-- [ ] T036 [P] [US4] Contract test `GET /orders/{orderId}/evidence-photos/{photoId}` (200/401/403/404) en `tests/contract/EvidencePhotoContentContractTest.java`
-- [ ] T037 [P] [US4] Integration test: dispatcher/supervisor obtienen el binario de cualquier foto; technician asignado obtiene las de su orden; technician no asignado → 403 (FR-009a) en `tests/integration/EvidencePhotoAccessTest.java`
-- [ ] T038 [P] [US4] Integration test: petición sin `Authorization` → 401 aunque el `photoId` sea válido (FR-009a) en `tests/integration/EvidencePhotoUnauthenticatedTest.java`
+- [X] T036 [P] [US4] Contract test `GET /orders/{orderId}/evidence-photos/{photoId}` (200/401/403/404) en `tests/contract/EvidencePhotoContentContractTest.java`
+- [X] T037 [P] [US4] Integration test: dispatcher/supervisor obtienen el binario de cualquier foto; technician asignado obtiene las de su orden; technician no asignado → 403 (FR-009a) en `tests/integration/EvidencePhotoAccessTest.java`
+- [X] T038 [P] [US4] Integration test: petición sin `Authorization` → 401 aunque el `photoId` sea válido (FR-009a) en `tests/integration/EvidencePhotoUnauthenticatedTest.java`
 - [ ] T039 [P] [US4] Frontend unit test: `OrderDetailComponent` renderiza una imagen por cada `evidencePhotoIds` y ninguna sección de fotos cuando la lista está vacía (FR-009, FR-010) en `src/frontend/src/app/orders/order-detail.component.spec.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T040 [US4] `FileStorageService.loadAsResource(String storagePath)`: lee el archivo ya guardado en el volumen Docker (ADR-004) y lo devuelve como `Resource` para streaming en `src/backend/src/main/java/com/fieldops/storage/FileStorageService.java`
-- [ ] T041 [US4] `OrderService`: extraer un método reutilizable (p. ej. `Order requireOrderVisibleTo(currentUser, orderId)`) a partir de la lógica ya usada por `getOrderDetail` (`findOrderOrThrow` + `requireVisibleTo`), para que lo reutilice el servicio de fotos en `src/backend/src/main/java/com/fieldops/service/OrderService.java`
-- [ ] T042 [US4] `EvidencePhotoService.getPhotoContent(currentUser, orderId, photoId)`: reutiliza T041 para la autorización, localiza la foto entre `order.getEvidencePhotos()` (404 si no pertenece a la orden) y devuelve su `Resource` + `contentType` (ADR-006) en `src/backend/src/main/java/com/fieldops/service/EvidencePhotoService.java` (depende de T040, T041)
-- [ ] T043 [US4] `OrderController`: `GET /orders/{orderId}/evidence-photos/{photoId}` devolviendo `ResponseEntity<Resource>` con el `Content-Type` correcto en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T042)
+- [X] T040 [US4] `FileStorageService.loadAsResource(String storagePath)`: lee el archivo ya guardado en el volumen Docker (ADR-004) y lo devuelve como `Resource` para streaming en `src/backend/src/main/java/com/fieldops/storage/FileStorageService.java`
+- [X] T041 [US4] `OrderService`: extraer un método reutilizable (p. ej. `Order requireOrderVisibleTo(currentUser, orderId)`) a partir de la lógica ya usada por `getOrderDetail` (`findOrderOrThrow` + `requireVisibleTo`), para que lo reutilice el servicio de fotos en `src/backend/src/main/java/com/fieldops/service/OrderService.java`
+- [X] T042 [US4] `EvidencePhotoService.getPhotoContent(currentUser, orderId, photoId)`: reutiliza T041 para la autorización, localiza la foto entre `order.getEvidencePhotos()` (404 si no pertenece a la orden) y devuelve su `Resource` + `contentType` (ADR-006) en `src/backend/src/main/java/com/fieldops/service/EvidencePhotoService.java` (depende de T040, T041)
+- [X] T043 [US4] `OrderController`: `GET /orders/{orderId}/evidence-photos/{photoId}` devolviendo `ResponseEntity<Resource>` con el `Content-Type` correcto en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T042)
 - [ ] T044 [P] [US4] Frontend: `OrderApiService.getEvidencePhotoUrl(orderId, photoId)` o método que obtenga el blob autenticado (según cómo el interceptor JWT ya adjunta el header) en `src/frontend/src/app/orders/order-api.service.ts`
 - [ ] T045 [US4] Frontend: `OrderDetailComponent`/`order-detail.component.html` — renderizar una imagen por cada foto de `evidencePhotoIds` (o vacío si no hay ninguna, FR-009, FR-010, SC-005) en `src/frontend/src/app/orders/order-detail.component.ts` y `order-detail.component.html` (depende de T044)
 

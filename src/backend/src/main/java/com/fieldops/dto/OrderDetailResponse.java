@@ -17,7 +17,8 @@ import java.util.UUID;
 public record OrderDetailResponse(
     UUID id,
     OrderStatus status,
-    UUID assignedTechnicianId,
+    String description,
+    String assignedTechnicianEmail,
     Instant createdAt,
     Instant updatedAt,
     String executionNote,
@@ -25,14 +26,15 @@ public record OrderDetailResponse(
     String rejectionComment) {
 
   public static OrderDetailResponse from(Order order) {
-    UUID assignedTechnicianId =
-        order.getAssignedTechnician() == null ? null : order.getAssignedTechnician().getId();
+    String assignedTechnicianEmail =
+        order.getAssignedTechnician() == null ? null : order.getAssignedTechnician().getEmail();
     List<UUID> evidencePhotoIds =
         order.getEvidencePhotos().stream().map(EvidencePhoto::getId).toList();
     return new OrderDetailResponse(
         order.getId(),
         order.getStatus(),
-        assignedTechnicianId,
+        order.getDescription(),
+        assignedTechnicianEmail,
         order.getCreatedAt(),
         order.getUpdatedAt(),
         order.getExecutionNote(),

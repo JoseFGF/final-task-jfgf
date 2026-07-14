@@ -4,6 +4,7 @@ import com.fieldops.dto.OrderDetailResponse;
 import com.fieldops.exception.ConflictException;
 import com.fieldops.exception.ForbiddenException;
 import com.fieldops.exception.NotFoundException;
+import com.fieldops.exception.ValidationException;
 import com.fieldops.model.Order;
 import com.fieldops.model.OrderStatus;
 import com.fieldops.model.Role;
@@ -13,8 +14,10 @@ import com.fieldops.repository.UserRepository;
 import com.fieldops.security.CurrentUser;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Reasignación de una orden a otro technician (US4, FR-013, FR-014, FR-021):
@@ -34,24 +37,41 @@ import org.springframework.stereotype.Service;
 public class ReassignmentService {
 
   private static final Set<OrderStatus> REASSIGNABLE_STATUSES =
-      Set.of(OrderStatus.assigned, OrderStatus.in_progress, OrderStatus.pending_review);
+      Set.of(
+          OrderStatus.draft,
+          OrderStatus.assigned,
+          OrderStatus.in_progress,
+          OrderStatus.pending_review);
 
   private static final int MAX_ATTEMPTS = 5;
 
   private final OrderRepository orderRepository;
   private final UserRepository userRepository;
+  private final ReassignmentService self;
 
-  public ReassignmentService(OrderRepository orderRepository, UserRepository userRepository) {
+  public ReassignmentService(
+      OrderRepository orderRepository,
+      UserRepository userRepository,
+      @Lazy ReassignmentService self) {
     this.orderRepository = orderRepository;
     this.userRepository = userRepository;
+    // Auto-referencia perezosa (proxy de Spring) para que doReassign() pase
+    // por el interceptor de @Transactional también en llamadas internas
+    // (la auto-invocación directa `this.doReassign(...)` lo saltaría): así
+    // la lectura de la orden, la resolución del technician y el guardado
+    // comparten un único contexto de persistencia por intento, evitando que
+    // el technician recién asignado quede como un proxy no inicializado tras
+    // el merge implícito de `saveAndFlush` (necesario ahora que se expone su
+    // email, no solo su id).
+    this.self = self;
   }
 
-  public OrderDetailResponse reassign(CurrentUser currentUser, UUID orderId, UUID newTechnicianId) {
+  public OrderDetailResponse reassign(CurrentUser currentUser, UUID orderId, String newTechnicianEmail) {
     requireDispatcher(currentUser);
 
     for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        return doReassign(orderId, newTechnicianId);
+        return self.doReassign(orderId, newTechnicianEmail);
       } catch (OptimisticLockingFailureException retryable) {
         if (attempt == MAX_ATTEMPTS) {
           throw retryable;
@@ -64,13 +84,13 @@ public class ReassignmentService {
     throw new IllegalStateException("No se pudo completar la reasignación");
   }
 
-  // Sin @Transactional aquí a propósito: cada intento debe leer la orden con
-  // la versión más reciente confirmada y escribirla en su propia
-  // transacción (findById/saveAndFlush ya son transaccionales por sí
-  // mismos vía Spring Data). Envolver todo el método en una única
+  // @Transactional por intento (no en reassign()): cada intento debe leer la
+  // orden con la versión más reciente confirmada y escribirla en su propia
+  // transacción; envolver todo el bucle de reintentos en una única
   // transacción impediría que un reintento vea la versión escrita por la
   // reasignación concurrente que ganó la ronda anterior.
-  private OrderDetailResponse doReassign(UUID orderId, UUID newTechnicianId) {
+  @Transactional
+  OrderDetailResponse doReassign(UUID orderId, String newTechnicianEmail) {
     Order order =
         orderRepository
             .findById(orderId)
@@ -79,18 +99,42 @@ public class ReassignmentService {
     if (order.getStatus() == OrderStatus.closed
         || !REASSIGNABLE_STATUSES.contains(order.getStatus())) {
       throw new ConflictException(
-          "La orden debe estar en assigned, in_progress o pending_review para reasignarse");
+          "La orden debe estar en draft, assigned, in_progress o pending_review para asignarse/reasignarse");
     }
 
-    User newTechnician =
-        userRepository
-            .findById(newTechnicianId)
-            .orElseThrow(
-                () -> new NotFoundException("Technician no encontrado: " + newTechnicianId));
+    User newTechnician = resolveTechnicianByEmail(newTechnicianEmail);
 
     order.setAssignedTechnician(newTechnician);
+    if (order.getStatus() == OrderStatus.draft) {
+      // Asignación inicial (FR-004, FR-005): la orden pasa de draft a assigned.
+      order.setStatus(OrderStatus.assigned);
+    }
     Order saved = orderRepository.saveAndFlush(order);
     return OrderDetailResponse.from(saved);
+  }
+
+  /**
+   * Resuelve un technician por email, insensible a mayúsculas/minúsculas y
+   * recortando espacios (FR-002, FR-003, ADR-005). Rechaza tanto un email
+   * inexistente como uno que exista con un rol distinto de TECHNICIAN.
+   */
+  static User resolveTechnicianByEmail(UserRepository userRepository, String email) {
+    User technician =
+        userRepository
+            .findByEmailIgnoreCase(email.strip())
+            .orElseThrow(
+                () ->
+                    new ValidationException(
+                        "El email no corresponde a ningún technician válido: " + email));
+    if (technician.getRole() != Role.TECHNICIAN) {
+      throw new ValidationException(
+          "El email no corresponde a ningún technician válido: " + email);
+    }
+    return technician;
+  }
+
+  private User resolveTechnicianByEmail(String email) {
+    return resolveTechnicianByEmail(userRepository, email);
   }
 
   private void requireDispatcher(CurrentUser currentUser) {
