@@ -1,6 +1,11 @@
 # Traceability Matrix
 
-Feature: `specs/001-order-lifecycle-workflow/`
+> Este documento cubre varias features del proyecto. Cada una numera sus
+> propios FR/SC de forma independiente (p. ej. `FR-001` de
+> `001-order-lifecycle-workflow` no es el mismo requisito que `FR-001` de
+> `003-order-management-enhancements`) — no combinar filas entre secciones.
+
+## Feature: `specs/001-order-lifecycle-workflow/`
 
 Actualizado tras `/speckit.implement` (US1-US5 + Polish T056-T058): todos los
 tests referenciados abajo existen como código real y pasan
@@ -11,7 +16,7 @@ verde para frontend). El estado ya no es "Planeado" sino:
   criterio, y ese test pasa.
 - **No verificado**: sigue sin existir un test que lo ejercite.
 
-## Requisitos Funcionales
+### Requisitos Funcionales
 
 | FR | Acceptance Criteria (spec.md) | Test | Estado |
 |---|---|---|---|
@@ -42,7 +47,7 @@ verde para frontend). El estado ya no es "Planeado" sino:
 | FR-023 | (implícito, auditoría de seguridad) | `tests/integration/AccessAuditTest.java` | Cubierto |
 | FR-024 | (añadido en Implement, ver spec.md Assumptions) | `tests/contract/AuthLoginContractTest.java`, `tests/integration/AuthLoginIntegrationTest.java` | Cubierto |
 
-## Success Criteria
+### Success Criteria
 
 | SC | Test/tarea | Estado |
 |---|---|---|
@@ -53,7 +58,7 @@ verde para frontend). El estado ya no es "Planeado" sino:
 | SC-005 | T065 — `tests/integration/PerformanceSmokeTest.java` | Cubierto |
 | SC-006 | `tests/integration/EncryptionSmokeTest.java` | Cubierto |
 
-## Huérfanos
+### Huérfanos
 
 Ninguno detectado — todos los archivos de test bajo `tests/contract/` y
 `tests/integration/` corresponden a al menos un FR/SC de `spec.md`. Las
@@ -61,7 +66,7 @@ clases de soporte (`BaseIntegrationTest.java`, `SupervisorOnlyTestController.jav
 `TestImages.java`) no son huérfanas: son infraestructura de test compartida,
 no tests en sí.
 
-## Resumen
+### Resumen
 
 - **Cubierto**: 29/30 (24 FRs + 5 SCs, contando FR-006a, FR-012a y FR-024) = 97%
 - **No verificado**: 1/30 (3%): **SC-004** — es una medida de experiencia de
@@ -82,3 +87,64 @@ sin test — cerrado con T010a, T027b, T056a). Esta actualización, tras
 `mvn clean verify` en verde). Queda SC-004 como el único punto pendiente,
 por su naturaleza no automatizable, con el procedimiento de medición manual
 documentado para quien pueda ejecutarlo.
+
+---
+
+## Feature: `specs/003-order-management-enhancements/`
+
+Actualizado tras `/speckit.implement` (US1-US4 + Polish T046-T047): todos los
+tests referenciados abajo existen como código real y pasan (102/102 backend
+`mvn test`, 62/62 frontend `ng test --watch=false`).
+
+### Requisitos Funcionales
+
+| FR | Acceptance Criteria (spec.md) | Test | Estado |
+|---|---|---|---|
+| FR-001 | US1 escenario 1 | `tests/contract/ReassignmentContractTest.java`, `tests/integration/ReassignmentByEmailTest.java` | Cubierto |
+| FR-002 | US1 escenario 2 | `tests/integration/ReassignmentInvalidEmailTest.java`, `tests/integration/OrderCreationInvalidTechnicianTest.java` | Cubierto |
+| FR-003 | US1 escenario 3 | `tests/integration/ReassignmentByEmailTest.java`, `tests/integration/UserRepositoryEmailLookupTest.java` | Cubierto |
+| FR-003a | US1 escenario 4 | `tests/contract/OrdersListContractTest.java`, `tests/contract/OrderDetailContractTest.java` (assignedTechnicianEmail, sin UUID) | Cubierto |
+| FR-004 | US2 escenario 1 | `tests/integration/ReassignmentDraftInitialAssignmentTest.java` | Cubierto |
+| FR-005 | US2 escenario 1 | `tests/integration/ReassignmentDraftInitialAssignmentTest.java` | Cubierto |
+| FR-006 | US2 escenario 2 | `tests/integration/ReassignmentClosedTest.java` | Cubierto |
+| FR-007 | US3 escenario 1 | `tests/contract/OrderCreationContractTest.java`, `tests/integration/OrderCreationDraftTest.java` | Cubierto |
+| FR-007a | US3 escenario 4 | `tests/integration/OrderCreationMissingDescriptionTest.java` | Cubierto |
+| FR-007b | US3 escenarios 2-3 | `tests/integration/OrderCreationAssignedTest.java`, `tests/integration/OrderCreationInvalidTechnicianTest.java` | Cubierto |
+| FR-007c | US3 escenario 2 | `tests/integration/OrderCreationAssignedTest.java` | Cubierto |
+| FR-008 | US3 escenario 5 | `tests/integration/OrderCreationForbiddenRoleTest.java` | Cubierto |
+| FR-009 | US4 escenario 1 | `tests/contract/EvidencePhotoContentContractTest.java`, `tests/integration/EvidencePhotoAccessTest.java`, `order-detail.component.spec.ts` (render de imágenes) | Cubierto |
+| FR-009a | (transversal a US4) | `tests/integration/EvidencePhotoUnauthenticatedTest.java`, `tests/integration/EvidencePhotoAccessTest.java` | Cubierto |
+| FR-010 | US4 escenario 2 | `order-detail.component.spec.ts` (ninguna sección cuando no hay fotos) | Cubierto |
+| FR-011 | US2 escenario 3 | `order-detail.component.spec.ts` (regresión `canReassign()` en `draft`, T018) | Cubierto |
+
+### Success Criteria
+
+| SC | Test/tarea | Estado |
+|---|---|---|
+| SC-001 | `tests/integration/ReassignmentByEmailTest.java` | Cubierto |
+| SC-002 | `tests/integration/ReassignmentInvalidEmailTest.java` | Cubierto |
+| SC-003 | `tests/integration/ReassignmentDraftInitialAssignmentTest.java` | Cubierto |
+| SC-004 | `tests/integration/OrderCreationDraftTest.java`, `tests/integration/OrderCreationAssignedTest.java` | Cubierto |
+| SC-005 | `tests/integration/EvidencePhotoAccessTest.java`, `order-detail.component.spec.ts` | Cubierto |
+| SC-006 | `order-detail.component.spec.ts`, `reassignment.component.spec.ts` (muestra email, no UUID) | Cubierto |
+| SC-007 | `tests/integration/OrderCreationAssignedTest.java` (auditoría `lastReassignedBy`/`lastReassignedAt`) | Cubierto |
+
+### Huérfanos
+
+Ninguno detectado — todos los tests nuevos bajo `tests/contract/` y
+`tests/integration/`, y los `.spec.ts` nuevos/actualizados en
+`src/frontend/src/app/orders/`, corresponden a al menos un FR/SC de
+`spec.md`.
+
+### Resumen
+
+- **Cubierto**: 23/23 (16 FRs + 7 SCs) = 100%.
+- Checklist de calidad (`checklists/general.md`): 15 ítems quedaron
+  aceptados explícitamente como hueco (no bloquean, cada uno con su motivo
+  anotado — ver `/speckit.clarify`/`/speckit.analyze`), ninguno afecta a la
+  cobertura de FR/SC reportada aquí.
+- Hallazgos de code review (T046/T047) ya corregidos y commiteados: N+1 en
+  `GET /orders`, acoplamiento estático entre `ReassignmentService` y
+  `OrderService` (extraído a `TechnicianLookupService`), validación
+  duplicada de `description`, y `canSubmit` de `OrderCreateComponent` sin
+  descartar descripciones de solo espacios.

@@ -95,3 +95,105 @@ documentado como no verificado, no como "aprobado por defecto".
 navegador y una cámara ejecute el procedimiento de `quickstart.md`
 ("Medición manual de SC-004") antes de considerar el slice 100% cerrado
 según el Principio III de la constitution (trazabilidad total).
+
+---
+
+# SLICE-REVIEW: Gestión de órdenes por email y visualización de evidencia
+
+Revisión de cierre conforme al punto 11 del Development Workflow de
+`.specify/memory/constitution.md`. Fecha: 2026-07-14.
+
+## 1. ¿Funciona de verdad?
+
+**Sí, verificado en vivo, no solo por tests.** Se reconstruyeron las 3
+imágenes Docker (`docker compose up --build`) y se ejecutaron llamadas HTTP
+reales contra el backend corriendo (`https://localhost:8443`), no solo la
+suite automatizada:
+
+- Asignación inicial sobre la orden seed `draft` (`a1111111-...`) por email,
+  con capitalización y espacios distintos (`"  Technician2@Fieldops.test  "`)
+  → 200, `status` pasa a `assigned`, y la respuesta expone
+  `assignedTechnicianEmail` (no UUID) — US1 + US2 confirmadas juntas.
+- Creación de orden (`POST /orders`): solo con `description` → 201 `draft`;
+  con `description` + `technicianEmail` → 201 `assigned`; sin `description`
+  → 422; como `technician` → 403 — los 4 casos de US3.
+- Fotos de evidencia (`GET .../evidence-photos/{photoId}`) sobre una orden
+  con una foto **real** ya subida en una sesión anterior (el volumen de
+  Postgres es persistente entre `docker compose up`): 200 con el PNG real
+  (confirmado con `file`, no solo por el código HTTP) como supervisor; 401
+  sin `Authorization`; 403 como `technician2` (no asignado a esa orden) — US4.
+- Caso real de foto referenciada en seed mock (`a4444444-...`) cuyo archivo
+  nunca se subió al disco → 404 con mensaje claro, no un 500 ni una página
+  rota — confirma que el Edge Case de "foto que ya no existe en el
+  almacenamiento" (FR-010) está cubierto también fuera de los tests.
+
+Tests automáticos: backend 102/102 (`mvn test`), frontend 62/62
+(`ng test --watch=false`), 0 fallos y 0 errores en la última corrida (tras
+aplicar los hallazgos de `java-reviewer`/`frontend-reviewer`).
+
+Esta verificación en vivo no encontró bugs nuevos (a diferencia de la
+feature 001, donde sí aparecieron dos huecos reales) — los dos problemas de
+diseño que sí aparecieron (N+1 en `GET /orders`, acoplamiento estático entre
+servicios) los encontró `java-reviewer` leyendo el código, y se corrigieron
+antes de esta ejecución en vivo.
+
+## 2. ¿Se entiende sin tener que preguntar al autor?
+
+**Sí**, con la documentación ya actualizada:
+- `README.md` — sección "Novedades (feature 003)" explica el cambio de UUID
+  a email y la nueva creación de órdenes.
+- `specs/003-order-management-enhancements/{spec,plan,research,data-model,quickstart}.md`
+  — decisiones técnicas (ADR-005 a ADR-008) con rationale y criterio de
+  revisión.
+- `docs/traceability.md` — sección propia para esta feature, 23/23 FR+SC
+  cubiertos (100%).
+- `docs/assumptions.md` — la suposición abierta de la feature 001 ("¿quién
+  crea/asigna una orden?") queda tachada y enlazada a esta feature como
+  resuelta.
+- `contracts/openapi.yaml` (v0.2.0) — nota explícita sobre la colisión de
+  numeración de FRs entre features (cada spec numera los suyos de forma
+  independiente).
+
+## 3. ¿Los tests realmente fallarían si se rompiera lo que dicen proteger?
+
+Muestreo de tests que ejercitan comportamiento real, no solo forma:
+- `ReassignmentByEmailTest`/`ReassignmentInvalidEmailTest`: usan
+  `findByEmailIgnoreCase` contra una base de datos Testcontainers real, no
+  un mock — si se rompiera la insensibilidad a mayúsculas, fallarían de
+  verdad.
+- `OrderCreationAssignedTest`: verifica `lastReassignedBy`/`lastReassignedAt`
+  reales tras la creación, no solo el código HTTP — si `OrderService`
+  dejara de auditar esa vía (FR-007c), este test lo detectaría.
+- `EvidencePhotoAccessTest`/`EvidencePhotoUnauthenticatedTest`: piden el
+  binario real de una foto guardada en disco (no un mock de
+  `FileStorageService`) y verifican el `Content-Type` de la respuesta.
+- Frontend: `order-detail.component.spec.ts` verifica que se revoca cada
+  `Object URL` (`URL.revokeObjectURL`) al destruir el componente o recargar
+  fotos — protege contra el memory leak que `frontend-reviewer` señaló
+  como riesgo a vigilar (confirmado ya cubierto, no un hueco).
+
+**Honestidad**: no se hizo mutation testing formal en esta feature tampoco;
+la confianza es la misma que en la feature 001 — razonada por muestreo, no
+una garantía exhaustiva.
+
+## 4. ¿El autor lo firmaría tal cual está?
+
+**Sí.** Las 4 historias de usuario (asignación/reasignación por email, fix
+del bug de `draft`, creación de órdenes, visualización de fotos) están
+implementadas, con RBAC en doble capa verificado en cada endpoint nuevo,
+trazabilidad al 100% para esta feature, y verificación en vivo sobre Docker
+que confirma que no solo "los tests pasan" sino que el sistema responde
+correctamente a peticiones HTTP reales. Los 3 hallazgos de code review
+(N+1, acoplamiento estático, validación duplicada) y el hallazgo de UX
+(descripción de solo espacios) se corrigieron antes de cerrar, no se
+dejaron como deuda técnica silenciosa. Los 15 ítems de checklist aceptados
+como hueco (`checklists/general.md`) están documentados con su motivo, no
+omitidos.
+
+## Decisión de aprobación
+
+**Aprobado sin condiciones pendientes** para esta feature — a diferencia de
+la feature 001 (que quedó con SC-004 pendiente de medición manual), todos
+los FR/SC de `003-order-management-enhancements` quedan verificados: por
+test automatizado y, adicionalmente, por ejecución real contra el sistema
+levantado en Docker.

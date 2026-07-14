@@ -160,12 +160,12 @@ cerrar esta fase.
 
 **Purpose**: Cierre transversal exigido por la constitution, no específico de una historia.
 
-- [ ] T046 [P] Revisión de clean code backend — agente `java-reviewer` sobre los cambios de `src/backend/`
-- [ ] T047 [P] Revisión de clean code frontend — agente `frontend-reviewer` sobre los cambios de `src/frontend/`
-- [ ] T048 Actualizar `docs/traceability.md` con la ruta real de cada test de T002-T045 conforme se completen — skill `traceability-matrix`
-- [ ] T049 [P] Actualizar `README.md` (raíz) si cambian credenciales/comandos de uso (p. ej. crear una orden desde la UI) — agente `docs-writer`
-- [ ] T050 Ejecutar `quickstart.md` (feature 003) end-to-end sobre el entorno Docker: los 4 escenarios de validación manual + la regresión rápida sobre los escenarios de la feature 001
-- [ ] T051 `docs/SLICE-REVIEW.md`: añadir la revisión de cierre de esta feature (4 preguntas, Development Workflow punto 11)
+- [X] T046 [P] Revisión de clean code backend — agente `java-reviewer` sobre los cambios de `src/backend/`
+- [X] T047 [P] Revisión de clean code frontend — agente `frontend-reviewer` sobre los cambios de `src/frontend/`
+- [X] T048 Actualizar `docs/traceability.md` con la ruta real de cada test de T002-T045 conforme se completen — skill `traceability-matrix`
+- [X] T049 [P] Actualizar `README.md` (raíz) si cambian credenciales/comandos de uso (p. ej. crear una orden desde la UI) — agente `docs-writer`
+- [X] T050 Ejecutar `quickstart.md` (feature 003) end-to-end sobre el entorno Docker: los 4 escenarios de validación manual + la regresión rápida sobre los escenarios de la feature 001
+- [X] T051 `docs/SLICE-REVIEW.md`: añadir la revisión de cierre de esta feature (4 preguntas, Development Workflow punto 11)
 
 ---
 
