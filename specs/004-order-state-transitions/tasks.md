@@ -93,6 +93,8 @@ dispatcher/supervisor, ADR-009).
 ### Implementation for User Story 2
 
 - [ ] T022 [US2] `OrderStatusService.changeStatus`: añadir la rama DISPATCHER/SUPERVISOR — valida que `(origen, destino)` esté en la tabla de adyacencia (T007), que el destino `pending_review` exija `!order.getEvidencePhotos().isEmpty()` (FR-005), que `closed` nunca sea origen (FR-006), y que mover a `draft` limpie `order.setAssignedTechnician(null)` (data-model.md) en `src/backend/src/main/java/com/fieldops/service/OrderStatusService.java` (depende de T007 — mismo archivo, tarea secuencial)
+- [ ] T022a [US2] Frontend: control de corrección manual de estado en `order-detail.component` — visible solo para `DISPATCHER`/`SUPERVISOR` y solo si `currentOrder.status !== 'closed'`; calcula el/los destino(s) adyacente(s) válidos a partir del estado actual (misma tabla de adyacencia de T007, replicada como constante en el frontend) y ofrece un botón por cada uno (p. ej. desde `assigned`: "Mover a draft" y "Mover a in_progress"; desde `pending_review`: "Mover a in_progress" y "Mover a closed") en `src/frontend/src/app/orders/order-detail.component.ts` y `order-detail.component.html` (depende de T009)
+- [ ] T022b [P] [US2] Frontend unit test: el control de corrección manual aparece solo para DISPATCHER/SUPERVISOR, ofrece exactamente los destinos adyacentes al estado actual, y no aparece en absoluto sobre una orden `closed` en `src/frontend/src/app/orders/order-detail.component.spec.ts`
 
 **Checkpoint**: US1 + US2 = ciclo de vida de la orden completamente transitable por los tres roles, con corrección manual disponible para dispatcher/supervisor.
 
