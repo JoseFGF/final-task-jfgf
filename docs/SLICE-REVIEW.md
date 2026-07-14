@@ -197,3 +197,107 @@ la feature 001 (que quedó con SC-004 pendiente de medición manual), todos
 los FR/SC de `003-order-management-enhancements` quedan verificados: por
 test automatizado y, adicionalmente, por ejecución real contra el sistema
 levantado en Docker.
+
+---
+
+# SLICE-REVIEW: Transiciones de estado de la orden por rol
+
+Revisión de cierre conforme al punto 11 del Development Workflow de
+`.specify/memory/constitution.md`. Fecha: 2026-07-14.
+
+## 1. ¿Funciona de verdad?
+
+**Sí, verificado en vivo, no solo por tests.** Se reconstruyó la imagen
+Docker del backend (`docker compose up -d --build backend`) sobre el mismo
+stack ya corriendo (postgres con datos persistentes de sesiones anteriores)
+y se ejecutaron los 9 escenarios de `quickstart.md` con llamadas HTTP reales:
+
+- **US1** (technician "inicia trabajo"): `assigned → in_progress` como el
+  technician propio → 200; el mismo intento de un technician *distinto* (no
+  asignado) → 403 ("La orden no está asignada a este technician"); repetir
+  sobre una orden ya `in_progress` → 409 ("El technician solo puede iniciar
+  el trabajo").
+- **US2** (corrección manual dispatcher/supervisor): mover a `pending_review`
+  sin evidencia → 422; mover `assigned → draft` → 200 y
+  `assignedTechnicianEmail` pasa a `null`; mover ese mismo `draft` a
+  `closed` (salto no adyacente) → 409; mover una orden `closed` → 409
+  (`closed → pending_review` no reconocido); ida y vuelta real
+  `pending_review → in_progress → pending_review` sobre una orden con
+  evidencia ya registrada → 200 en ambos sentidos.
+- **Regresión (feature 003)**: `GET /api/v1/orders` directo al backend y a
+  través del proxy de Nginx del frontend (`http://localhost:4200/api/...`)
+  siguen devolviendo 200 con los datos esperados tras el despliegue de la
+  nueva imagen.
+
+Esta verificación en vivo confirmó, sobre el sistema real, el hallazgo de
+`java-reviewer` corregido antes de este pase: **mover manualmente una orden
+`draft` a `assigned` sin un technician ya asignado → 422** ("Debe asignarse
+un technician (feature 003) antes de mover la orden a assigned"), en vez de
+dejar la orden en un estado inconsistente (`assigned` sin nadie asignado)
+como ocurría con el código original de Implement.
+
+Tests automáticos: backend 138/138 (`mvn test`, incluye el nuevo test de
+regresión `OrderStatusManualDraftToAssignedRequiresTechnicianTest`), frontend
+73/73 (`ng test --watch=false`, incluye el nuevo test de
+`changeOrderStatus` en `order-api.service.spec.ts` y el de deshabilitado de
+botón en `order-detail.component.spec.ts`).
+
+## 2. ¿Se entiende sin tener que preguntar al autor?
+
+**Sí**, con la documentación ya actualizada:
+- `README.md` — sección "Novedades (feature 004)" resume el nuevo endpoint,
+  quién puede usarlo y sus reglas.
+- `specs/004-order-state-transitions/{spec,plan,research,data-model,quickstart}.md`
+  — ADR-009 a ADR-011 con rationale, tabla de adyacencia como fuente de
+  verdad única (ADR-010), y guía de validación manual.
+- `docs/traceability.md` — sección propia, 9/9 FR+SC cubiertos (100%),
+  incluyendo el hallazgo de code review corregido.
+- `checklists/general.md` — 12/17 ítems resueltos con referencia concreta a
+  `research.md`/`data-model.md`/`tasks.md`; los 5 restantes están aceptados
+  explícitamente como hueco intencional (no bloquean), cada uno con su
+  motivo.
+
+## 3. ¿Los tests realmente fallarían si se rompiera lo que dicen proteger?
+
+Muestreo de tests que ejercitan comportamiento real, no solo forma:
+- `OrderStatusConcurrencyTest`: lanza hilos reales contra la misma orden
+  para forzar el reintento por bloqueo optimista (FR-008), mismo patrón que
+  `ReassignmentConcurrencyTest` de la feature 003.
+- `OrderStatusManualNonAdjacentTest`: parametrizado sobre todos los pares no
+  adyacentes (`draft→in_progress`, `draft→closed`, `assigned→pending_review`,
+  `assigned→closed`, `in_progress→closed`, cualquier salida de `closed`) —
+  si la tabla de adyacencia cambiara sin querer, este test lo detectaría.
+- `OrderStatusManualDraftToAssignedRequiresTechnicianTest` (añadido en
+  Polish): reproduce exactamente el bug encontrado por `java-reviewer` y
+  falla si la validación se elimina.
+- `OrderStartWrongTechnicianTest`/`OrderStatusManualForbiddenForTechnicianTest`:
+  verifican 403 específicamente por rol/propiedad incorrectos, no solo
+  "rechaza".
+
+**Honestidad**: no se hizo mutation testing formal; la confianza es
+razonada por muestreo, igual que en las features 001 y 003.
+
+## 4. ¿El autor lo firmaría tal cual está?
+
+**Sí.** Las 2 historias de usuario (technician inicia trabajo, corrección
+manual de dispatcher/supervisor) están implementadas con RBAC en doble capa,
+trazabilidad al 100% para esta feature, y verificación en vivo sobre Docker
+que reprodujo los 9 escenarios de `quickstart.md` más la regresión de la
+feature 003. Los hallazgos reales de code review — el bug de
+`draft→assigned` sin technician (`java-reviewer`) y la falta de estado
+deshabilitado/en curso en los botones de cambio de estado
+(`frontend-reviewer`) — se corrigieron antes de cerrar, con su test de
+regresión correspondiente, no se dejaron como deuda técnica silenciosa. El
+hallazgo de `java-reviewer` sobre "tests inexistentes" resultó ser un falso
+negativo (el repositorio guarda los tests bajo `tests/` en la raíz, no bajo
+`src/backend/src/test`, algo documentado en `pom.xml:173-190` pero fácil de
+pasar por alto para un revisor sin ese contexto) — se verificó explícitamente
+antes de descartarlo.
+
+## Decisión de aprobación
+
+**Aprobado sin condiciones pendientes** para esta feature — todos los FR/SC
+de `004-order-state-transitions` quedan verificados: por test automatizado
+y, adicionalmente, por ejecución real contra el sistema levantado en
+Docker, incluyendo el escenario que en Implement tenía un bug real (ahora
+corregido y cubierto por test).
