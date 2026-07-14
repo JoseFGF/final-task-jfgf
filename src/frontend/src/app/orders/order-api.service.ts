@@ -5,6 +5,7 @@ import {
   CreateOrderRequest,
   IncidentSummaryResult,
   OrderDetail,
+  OrderStatus,
   OrderSummary,
   ReviewDecision,
 } from './order.model';
@@ -67,6 +68,20 @@ export class OrderApiService {
     return this.http.post<OrderDetail>(`${ORDERS_BASE_URL}/${orderId}/reassignment`, {
       newTechnicianEmail,
     });
+  }
+
+  /**
+   * `POST /orders/{orderId}/status` — cambia el estado de una orden
+   * (004-order-state-transitions, FR-001 a FR-009). Endpoint único
+   * compartido por dos historias de usuario con reglas de rol distintas
+   * (ADR-009): TECHNICIAN solo puede pedir `in_progress` sobre una orden
+   * `assigned` que tiene asignada (FR-001 a FR-003, "iniciar trabajo");
+   * DISPATCHER/SUPERVISOR pueden pedir cualquier destino adyacente al
+   * estado actual (FR-004). El backend es la autoridad final sobre ambas
+   * reglas y sobre la tabla de adyacencia (`data-model.md`).
+   */
+  changeOrderStatus(orderId: string, status: OrderStatus): Observable<OrderDetail> {
+    return this.http.post<OrderDetail>(`${ORDERS_BASE_URL}/${orderId}/status`, { status });
   }
 
   /**
