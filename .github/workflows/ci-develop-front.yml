@@ -20,7 +20,7 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: ghcr.io/${{ github.repository }}/fieldops-frontend:${{ steps.version.outputs.tag }}
+      image: ghcr.io/${{ steps.version.outputs.repo_lower }}/fieldops-frontend:${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -32,6 +32,7 @@ jobs:
           BASE=${BASE#frontend-v}
           SHA_CORTO=$(git rev-parse --short HEAD)
           echo "tag=${BASE}-snapshot.${SHA_CORTO}" >> "$GITHUB_OUTPUT"
+          echo "repo_lower=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
       - name: Login en GHCR
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
@@ -43,7 +44,7 @@ jobs:
         with:
           context: src/frontend
           push: true
-          tags: ghcr.io/${{ github.repository }}/fieldops-frontend:${{ steps.version.outputs.tag }}
+          tags: ghcr.io/${{ steps.version.outputs.repo_lower }}/fieldops-frontend:${{ steps.version.outputs.tag }}
       - name: Comprimir y subir el dist de este build (90 días)
         run: |
           mkdir -p /tmp/dist

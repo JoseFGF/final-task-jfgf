@@ -56,6 +56,9 @@ jobs:
       image: ${{ steps.set-image.outputs.image }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Calcular nombre de repositorio en minúsculas
+        id: repo
+        run: echo "lower=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
       - name: Login en GHCR
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
         with:
@@ -67,9 +70,9 @@ jobs:
         with:
           context: src/backend
           push: true
-          tags: ghcr.io/${{ github.repository }}/fieldops-backend:${{ needs.calculate-version.outputs.version }}
+          tags: ghcr.io/${{ steps.repo.outputs.lower }}/fieldops-backend:${{ needs.calculate-version.outputs.version }}
       - id: set-image
-        run: echo "image=ghcr.io/${{ github.repository }}/fieldops-backend:${{ needs.calculate-version.outputs.version }}" >> "$GITHUB_OUTPUT"
+        run: echo "image=ghcr.io/${{ steps.repo.outputs.lower }}/fieldops-backend:${{ needs.calculate-version.outputs.version }}" >> "$GITHUB_OUTPUT"
       - name: Crear el tag de git y la entrega formal (FR-012)
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
