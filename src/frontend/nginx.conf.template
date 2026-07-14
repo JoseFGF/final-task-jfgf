@@ -1,5 +1,3 @@
-# Disparo trivial para forzar ci-develop-front.yml con el fix de
-# minúsculas en el tag de GHCR (specs/002-cicd-pipeline-branching).
 server {
     listen 80;
     server_name _;
@@ -7,20 +5,21 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # DNS embebido de Docker: se usa una variable en `proxy_pass` (en vez de
-    # un host literal) para que nginx resuelva "backend" de forma perezosa,
-    # en cada request, con este resolver. Con un host literal, nginx intenta
-    # resolverlo una sola vez al arrancar y el worker falla si "backend"
-    # todavía no existe en la red (p.ej. al construir/probar esta imagen de
-    # forma aislada, sin docker-compose).
-    resolver 127.0.0.11 valid=30s;
+    # DNS_RESOLVER, BACKEND_SCHEME y BACKEND_ORIGIN se sustituyen vía
+    # envsubst al arrancar el contenedor (mecanismo estándar de la imagen
+    # oficial nginx:alpine para archivos en /etc/nginx/templates/*.template).
+    # Los valores por defecto (ver Dockerfile ENV) reproducen el
+    # docker-compose local: backend accesible como host "backend:8443" vía
+    # el DNS embebido de Docker. En Railway (u otro PaaS) el backend es un
+    # servicio aparte con dominio público, así que se sobreescriben
+    # BACKEND_ORIGIN (dominio público) y DNS_RESOLVER (DNS público, p.ej.
+    # 1.1.1.1) como variables de entorno del servicio frontend.
+    resolver ${DNS_RESOLVER} valid=30s;
 
     # `OrderApiService` (src/app/orders/order-api.service.ts) llama a rutas
-    # relativas ("/api/v1/..."), es decir, mismo origen que el frontend. En
-    # docker-compose el backend vive en el host "backend" del puerto 8443
-    # sobre HTTPS con un certificado autofirmado de desarrollo (perfil
-    # `prod`, application-prod.yml). Sin este proxy, esas llamadas irían al
-    # propio contenedor de nginx (404) en vez de al backend.
+    # relativas ("/api/v1/..."), es decir, mismo origen que el frontend. Sin
+    # este proxy, esas llamadas irían al propio contenedor de nginx (404) en
+    # vez de al backend.
     location /api/ {
         # IMPORTANTE: cuando proxy_pass usa una variable, nginx NO reescribe
         # el URI (no hace el "reemplazar el prefijo de location" que sí hace
@@ -32,11 +31,16 @@ server {
         # solución correcta es NO añadir ningún path tras la variable — el
         # URI del cliente ya es exactamente "/api/v1/..." y coincide con lo
         # que el backend espera, así que se reenvía sin modificar.
-        set $backend_upstream https://backend:8443;
+        set $backend_upstream ${BACKEND_SCHEME}://${BACKEND_ORIGIN};
         proxy_pass $backend_upstream;
         proxy_ssl_verify off;
+        proxy_ssl_server_name on;
 
-        proxy_set_header Host $host;
+        # Railway (y otros PaaS con edge compartido) enrutan por el header
+        # Host: hay que enviar el dominio del backend, no el del cliente
+        # original ($host), o el edge no sabe a qué servicio dirigir la
+        # petición y responde 404 "Application not found".
+        proxy_set_header Host ${BACKEND_ORIGIN};
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;

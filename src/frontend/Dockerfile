@@ -24,6 +24,17 @@ FROM nginx:alpine AS runtime
 # dist/frontend/browser (Angular 17+ separa server/browser aunque no se use
 # SSR aquí).
 COPY --from=build /build/dist/frontend/browser /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# nginx.conf.template se resuelve con envsubst al arrancar el contenedor
+# (mecanismo estándar de la imagen oficial nginx:alpine para archivos en
+# /etc/nginx/templates/*.template -> /etc/nginx/conf.d/*.conf). Los valores
+# por defecto reproducen el docker-compose local (backend accesible como
+# host "backend:8443" vía el DNS embebido de Docker). En Railway se
+# sobreescriben BACKEND_ORIGIN y DNS_RESOLVER como variables de entorno del
+# servicio frontend, sin tocar esta imagen.
+ENV DNS_RESOLVER=127.0.0.11 \
+    BACKEND_SCHEME=https \
+    BACKEND_ORIGIN=backend:8443
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 80
