@@ -23,6 +23,12 @@ RUN mvn -q -B package -DskipTests
 FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
+# La imagen base congela los paquetes de Alpine a la fecha de su propio
+# build; actualizarlos aquí asegura los parches de seguridad ya publicados
+# (libexpat, p11-kit — CVEs HIGH detectados por Trivy) sin depender de que
+# el mantenedor de la imagen base publique una nueva revisión.
+RUN apk update && apk upgrade --no-cache
+
 # El perfil `prod` (application-prod.yml) expone HTTPS en el puerto 8443
 # usando el keystore autofirmado de desarrollo, generado automáticamente
 # durante `mvn package` (ver pom.xml, plugin maven-antrun-plugin) en
