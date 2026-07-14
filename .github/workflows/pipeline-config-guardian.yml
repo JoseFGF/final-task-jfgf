@@ -11,6 +11,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/**"
+      - ".github/scripts/**"
       - "pipeline-constitution.md"
       - "specs/002-cicd-pipeline-branching/**"
 
