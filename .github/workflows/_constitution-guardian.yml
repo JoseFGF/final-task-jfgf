@@ -62,7 +62,7 @@ jobs:
             Responde exclusivamente con la estructura de salida solicitada.
           claude_args: |
             --max-turns 8
-            --json-schema '{"type":"object","required":["violation","reason"],"properties":{"violation":{"type":"boolean","description":"true si el cambio viola algún principio no negociable"},"reason":{"type":"string","description":"motivo concreto de la violación, o cadena vacía si no hay violación"}}}'
+            --json-schema '{"type":"object","required":["violation","reason"],"properties":{"violation":{"type":"boolean"},"reason":{"type":"string"}}}'
 
       - name: Fallar el check si se detectó una violación
         shell: bash
