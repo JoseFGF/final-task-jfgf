@@ -65,7 +65,7 @@ jobs:
             o
             CONSTITUTION_VIOLATION: <motivo concreto en una frase>
           claude_args: |
-            --max-turns 8
+            --max-turns 20
 
       - name: Fallar el check si se detectó una violación
         shell: bash
