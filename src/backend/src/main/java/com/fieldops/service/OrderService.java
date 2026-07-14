@@ -5,7 +5,6 @@ import com.fieldops.dto.OrderDetailResponse;
 import com.fieldops.dto.OrderSummaryResponse;
 import com.fieldops.exception.ForbiddenException;
 import com.fieldops.exception.NotFoundException;
-import com.fieldops.exception.ValidationException;
 import com.fieldops.model.Order;
 import com.fieldops.model.OrderStatus;
 import com.fieldops.model.Role;
@@ -36,10 +35,15 @@ public class OrderService {
 
   private final OrderRepository orderRepository;
   private final UserRepository userRepository;
+  private final TechnicianLookupService technicianLookupService;
 
-  public OrderService(OrderRepository orderRepository, UserRepository userRepository) {
+  public OrderService(
+      OrderRepository orderRepository,
+      UserRepository userRepository,
+      TechnicianLookupService technicianLookupService) {
     this.orderRepository = orderRepository;
     this.userRepository = userRepository;
+    this.technicianLookupService = technicianLookupService;
   }
 
   @Transactional(readOnly = true)
@@ -61,17 +65,15 @@ public class OrderService {
   public OrderDetailResponse createOrder(CurrentUser currentUser, CreateOrderRequest request) {
     requireDispatcher(currentUser);
 
-    String description = request.description() == null ? "" : request.description().strip();
-    if (description.isBlank()) {
-      throw new ValidationException("La descripción de la orden es obligatoria");
-    }
-
+    // FR-007a ya la valida `@NotBlank` en CreateOrderRequest + @Valid del
+    // controller (rechaza null/vacío/solo-espacios antes de llegar aquí);
+    // no se revalida para no tener dos fuentes de verdad de la misma regla.
     Order order = new Order(UUID.randomUUID(), OrderStatus.draft, null);
-    order.setDescription(description);
+    order.setDescription(request.description().strip());
 
     String technicianEmail = request.technicianEmail();
     if (technicianEmail != null && !technicianEmail.isBlank()) {
-      User technician = ReassignmentService.resolveTechnicianByEmail(userRepository, technicianEmail);
+      User technician = technicianLookupService.resolveByEmail(technicianEmail);
       User dispatcher =
           userRepository
               .findById(currentUser.id())

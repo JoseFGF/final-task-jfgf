@@ -4,13 +4,11 @@ import com.fieldops.dto.OrderDetailResponse;
 import com.fieldops.exception.ConflictException;
 import com.fieldops.exception.ForbiddenException;
 import com.fieldops.exception.NotFoundException;
-import com.fieldops.exception.ValidationException;
 import com.fieldops.model.Order;
 import com.fieldops.model.OrderStatus;
 import com.fieldops.model.Role;
 import com.fieldops.model.User;
 import com.fieldops.repository.OrderRepository;
-import com.fieldops.repository.UserRepository;
 import com.fieldops.security.CurrentUser;
 import java.util.Set;
 import java.util.UUID;
@@ -46,15 +44,15 @@ public class ReassignmentService {
   private static final int MAX_ATTEMPTS = 5;
 
   private final OrderRepository orderRepository;
-  private final UserRepository userRepository;
+  private final TechnicianLookupService technicianLookupService;
   private final ReassignmentService self;
 
   public ReassignmentService(
       OrderRepository orderRepository,
-      UserRepository userRepository,
+      TechnicianLookupService technicianLookupService,
       @Lazy ReassignmentService self) {
     this.orderRepository = orderRepository;
-    this.userRepository = userRepository;
+    this.technicianLookupService = technicianLookupService;
     // Auto-referencia perezosa (proxy de Spring) para que doReassign() pase
     // por el interceptor de @Transactional también en llamadas internas
     // (la auto-invocación directa `this.doReassign(...)` lo saltaría): así
@@ -102,7 +100,7 @@ public class ReassignmentService {
           "La orden debe estar en draft, assigned, in_progress o pending_review para asignarse/reasignarse");
     }
 
-    User newTechnician = resolveTechnicianByEmail(newTechnicianEmail);
+    User newTechnician = technicianLookupService.resolveByEmail(newTechnicianEmail);
 
     order.setAssignedTechnician(newTechnician);
     if (order.getStatus() == OrderStatus.draft) {
@@ -111,30 +109,6 @@ public class ReassignmentService {
     }
     Order saved = orderRepository.saveAndFlush(order);
     return OrderDetailResponse.from(saved);
-  }
-
-  /**
-   * Resuelve un technician por email, insensible a mayúsculas/minúsculas y
-   * recortando espacios (FR-002, FR-003, ADR-005). Rechaza tanto un email
-   * inexistente como uno que exista con un rol distinto de TECHNICIAN.
-   */
-  static User resolveTechnicianByEmail(UserRepository userRepository, String email) {
-    User technician =
-        userRepository
-            .findByEmailIgnoreCase(email.strip())
-            .orElseThrow(
-                () ->
-                    new ValidationException(
-                        "El email no corresponde a ningún technician válido: " + email));
-    if (technician.getRole() != Role.TECHNICIAN) {
-      throw new ValidationException(
-          "El email no corresponde a ningún technician válido: " + email);
-    }
-    return technician;
-  }
-
-  private User resolveTechnicianByEmail(String email) {
-    return resolveTechnicianByEmail(userRepository, email);
   }
 
   private void requireDispatcher(CurrentUser currentUser) {
