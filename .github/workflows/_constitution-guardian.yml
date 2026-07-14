@@ -75,6 +75,9 @@ jobs:
             echo "El guardián no devolvió un archivo de ejecución — se trata como fallo (no se puede confirmar que no hay violación)."
             exit 1
           fi
+          echo "::group::DEBUG - contenido crudo de execution_file"
+          cat "$FILE"
+          echo "::endgroup::"
           # execution_file es JSONL de mensajes del SDK; el texto final de
           # Claude vive en el último mensaje "assistant" con bloques "text".
           TEXT=$(python3 "${{ github.workspace }}/.github/scripts/extract-guardian-text.py" "$FILE")
