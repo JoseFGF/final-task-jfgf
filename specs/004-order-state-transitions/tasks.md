@@ -39,7 +39,7 @@ auditoría nuevo).
 usuario (el mismo `POST /orders/{orderId}/status` sirve a technician y a
 dispatcher/supervisor, ADR-009).
 
-- [ ] T001 [P] `OrderStatusChangeRequest` DTO (`status: OrderStatus`, `@NotNull`) en `src/backend/src/main/java/com/fieldops/dto/OrderStatusChangeRequest.java`
+- [X] T001 [P] `OrderStatusChangeRequest` DTO (`status: OrderStatus`, `@NotNull`) en `src/backend/src/main/java/com/fieldops/dto/OrderStatusChangeRequest.java`
 
 **Checkpoint**: Con esto listo, US1 puede avanzar (US2 depende de que US1 haya creado `OrderStatusService`, ver más abajo).
 
@@ -53,16 +53,16 @@ dispatcher/supervisor, ADR-009).
 
 ### Tests for User Story 1
 
-- [ ] T002 [P] [US1] Contract test `POST /orders/{orderId}/status` — esqueleto del endpoint y forma de `ErrorResponse` (200/401/403/404/409) en `tests/contract/OrderStatusContractTest.java`
-- [ ] T003 [P] [US1] Integration test: technician asignado marca `assigned→in_progress` → 200 (FR-001, SC-001) en `tests/integration/OrderStartByTechnicianTest.java`
-- [ ] T004 [P] [US1] Integration test: technician NO asignado a la orden intenta iniciarla → 403 (FR-002, SC-002) en `tests/integration/OrderStartWrongTechnicianTest.java`
-- [ ] T005 [P] [US1] Integration test: technician asignado intenta iniciar una orden que no está en `assigned` (p. ej. ya `in_progress`) → 409 (FR-003) en `tests/integration/OrderStartInvalidStateTest.java`
-- [ ] T006 [P] [US1] Integration test: dispatcher o supervisor intentan usar esta acción específica de "iniciar trabajo" (semánticamente, pedir un `status` distinto del que su rol tiene permitido, o intentar sin ser el technician) → 403 en `tests/integration/OrderStartWrongRoleTest.java`
+- [X] T002 [P] [US1] Contract test `POST /orders/{orderId}/status` — esqueleto del endpoint y forma de `ErrorResponse` (200/401/403/404/409) en `tests/contract/OrderStatusContractTest.java`
+- [X] T003 [P] [US1] Integration test: technician asignado marca `assigned→in_progress` → 200 (FR-001, SC-001) en `tests/integration/OrderStartByTechnicianTest.java`
+- [X] T004 [P] [US1] Integration test: technician NO asignado a la orden intenta iniciarla → 403 (FR-002, SC-002) en `tests/integration/OrderStartWrongTechnicianTest.java`
+- [X] T005 [P] [US1] Integration test: technician asignado intenta iniciar una orden que no está en `assigned` (p. ej. ya `in_progress`) → 409 (FR-003) en `tests/integration/OrderStartInvalidStateTest.java`
+- [X] T006 [P] [US1] Integration test: dispatcher o supervisor intentan usar esta acción específica de "iniciar trabajo" (semánticamente, pedir un `status` distinto del que su rol tiene permitido, o intentar sin ser el technician) → 403 en `tests/integration/OrderStartWrongRoleTest.java`
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] `OrderStatusService`: constante de adyacencia (ADR-010, `data-model.md`) — `Set` de pares `(origen, destino)` reconocidos: `draft↔assigned`, `assigned↔in_progress`, `in_progress↔pending_review`, `pending_review→closed`; método `changeStatus(CurrentUser, orderId, OrderStatus target)` con rama TECHNICIAN: exige `target == in_progress`, `order.getStatus() == assigned` y que el technician autenticado sea `order.getAssignedTechnician()` (FR-001 a FR-003); reutiliza el patrón de bloqueo optimista + reintento con auto-referencia `@Lazy` de `ReassignmentService` (ADR-011) en `src/backend/src/main/java/com/fieldops/service/OrderStatusService.java` (depende de T001)
-- [ ] T008 [US1] `OrderController`: `POST /orders/{orderId}/status` con `@PreAuthorize("hasAnyRole('DISPATCHER','TECHNICIAN','SUPERVISOR')")` (el servicio decide la regla exacta por rol) en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T007)
+- [X] T007 [US1] `OrderStatusService`: constante de adyacencia (ADR-010, `data-model.md`) — `Set` de pares `(origen, destino)` reconocidos: `draft↔assigned`, `assigned↔in_progress`, `in_progress↔pending_review`, `pending_review→closed`; método `changeStatus(CurrentUser, orderId, OrderStatus target)` con rama TECHNICIAN: exige `target == in_progress`, `order.getStatus() == assigned` y que el technician autenticado sea `order.getAssignedTechnician()` (FR-001 a FR-003); reutiliza el patrón de bloqueo optimista + reintento con auto-referencia `@Lazy` de `ReassignmentService` (ADR-011) en `src/backend/src/main/java/com/fieldops/service/OrderStatusService.java` (depende de T001)
+- [X] T008 [US1] `OrderController`: `POST /orders/{orderId}/status` con `@PreAuthorize("hasAnyRole('DISPATCHER','TECHNICIAN','SUPERVISOR')")` (el servicio decide la regla exacta por rol) en `src/backend/src/main/java/com/fieldops/controller/OrderController.java` (depende de T007)
 - [ ] T009 [P] [US1] Frontend: `OrderApiService.changeOrderStatus(orderId, status)` (`POST /orders/{orderId}/status`) en `src/frontend/src/app/orders/order-api.service.ts`
 - [ ] T010 [US1] Frontend: botón "Iniciar trabajo" en `order-detail.component` — visible si `role === TECHNICIAN` y `currentOrder.status === 'assigned'` (control de UX, Principio II: el backend valida la propiedad real vía T007; el frontend no conoce el UUID del technician asignado, solo su email, y el JWT no lo expone — mismo patrón ya usado por `canReview`/`canReassign`) en `src/frontend/src/app/orders/order-detail.component.ts` y `order-detail.component.html` (depende de T009)
 - [ ] T011 [P] [US1] Frontend unit test: el botón "Iniciar trabajo" aparece solo para `TECHNICIAN` sobre una orden `assigned`, y llama a `changeOrderStatus(id, 'in_progress')` en `src/frontend/src/app/orders/order-detail.component.spec.ts`
@@ -79,20 +79,20 @@ dispatcher/supervisor, ADR-009).
 
 ### Tests for User Story 2
 
-- [ ] T012 [P] [US2] Integration test: dispatcher/supervisor cambian `assigned→in_progress` manualmente → 200 (mismo resultado que US1) (FR-004, SC-001) en `tests/integration/OrderStatusManualForwardTest.java`
-- [ ] T013 [P] [US2] Integration test: dispatcher/supervisor intentan `in_progress→pending_review` sin ninguna foto de evidencia → 422 (FR-005, SC-003) en `tests/integration/OrderStatusManualMissingEvidenceTest.java`
-- [ ] T014 [P] [US2] Integration test: dispatcher/supervisor cambian `in_progress→pending_review` con evidencia ya registrada → 200 (FR-005) en `tests/integration/OrderStatusManualToPendingReviewTest.java`
-- [ ] T015 [P] [US2] Integration test: dispatcher/supervisor cambian `assigned→draft` (retroceso) → 200 y el technician queda desvinculado (`assignedTechnicianEmail: null`) en `tests/integration/OrderStatusManualToDraftUnassignsTest.java`
-- [ ] T016 [P] [US2] Integration test: dispatcher/supervisor cambian `pending_review→in_progress` manualmente (sin comentario de rechazo) → 200 en `tests/integration/OrderStatusManualBackwardTest.java`
-- [ ] T017 [P] [US2] Integration test: dispatcher/supervisor cambian `pending_review→closed` manualmente → 200 (FR-004) en `tests/integration/OrderStatusManualToClosedTest.java`
-- [ ] T018 [P] [US2] Integration test: dispatcher/supervisor intentan una transición no adyacente (`draft→closed`, `draft→in_progress`, `assigned→pending_review`, `assigned→closed`, `in_progress→closed`) → 409 en cada caso (FR-004, SC-005) en `tests/integration/OrderStatusManualNonAdjacentTest.java`
-- [ ] T019 [P] [US2] Integration test: dispatcher/supervisor intentan cambiar una orden `closed` a cualquier otro estado → 409 (FR-006, SC-004) en `tests/integration/OrderStatusManualClosedTerminalTest.java`
-- [ ] T020 [P] [US2] Integration test: un technician intenta usar el cambio manual de estado fuera de su única transición permitida (p. ej. pedir `assigned→draft`, o pedir un cambio sobre una orden que no tiene asignada) → 403 (FR-007) en `tests/integration/OrderStatusManualForbiddenForTechnicianTest.java`
-- [ ] T021 [P] [US2] Integration test: dos cambios de estado concurrentes sobre la misma orden → gana el último procesado válidamente, sin dejar la orden en estado contradictorio (FR-008) en `tests/integration/OrderStatusConcurrencyTest.java`
+- [X] T012 [P] [US2] Integration test: dispatcher/supervisor cambian `assigned→in_progress` manualmente → 200 (mismo resultado que US1) (FR-004, SC-001) en `tests/integration/OrderStatusManualForwardTest.java`
+- [X] T013 [P] [US2] Integration test: dispatcher/supervisor intentan `in_progress→pending_review` sin ninguna foto de evidencia → 422 (FR-005, SC-003) en `tests/integration/OrderStatusManualMissingEvidenceTest.java`
+- [X] T014 [P] [US2] Integration test: dispatcher/supervisor cambian `in_progress→pending_review` con evidencia ya registrada → 200 (FR-005) en `tests/integration/OrderStatusManualToPendingReviewTest.java`
+- [X] T015 [P] [US2] Integration test: dispatcher/supervisor cambian `assigned→draft` (retroceso) → 200 y el technician queda desvinculado (`assignedTechnicianEmail: null`) en `tests/integration/OrderStatusManualToDraftUnassignsTest.java`
+- [X] T016 [P] [US2] Integration test: dispatcher/supervisor cambian `pending_review→in_progress` manualmente (sin comentario de rechazo) → 200 en `tests/integration/OrderStatusManualBackwardTest.java`
+- [X] T017 [P] [US2] Integration test: dispatcher/supervisor cambian `pending_review→closed` manualmente → 200 (FR-004) en `tests/integration/OrderStatusManualToClosedTest.java`
+- [X] T018 [P] [US2] Integration test: dispatcher/supervisor intentan una transición no adyacente (`draft→closed`, `draft→in_progress`, `assigned→pending_review`, `assigned→closed`, `in_progress→closed`) → 409 en cada caso (FR-004, SC-005) en `tests/integration/OrderStatusManualNonAdjacentTest.java`
+- [X] T019 [P] [US2] Integration test: dispatcher/supervisor intentan cambiar una orden `closed` a cualquier otro estado → 409 (FR-006, SC-004) en `tests/integration/OrderStatusManualClosedTerminalTest.java`
+- [X] T020 [P] [US2] Integration test: un technician intenta usar el cambio manual de estado fuera de su única transición permitida (p. ej. pedir `assigned→draft`, o pedir un cambio sobre una orden que no tiene asignada) → 403 (FR-007) en `tests/integration/OrderStatusManualForbiddenForTechnicianTest.java`
+- [X] T021 [P] [US2] Integration test: dos cambios de estado concurrentes sobre la misma orden → gana el último procesado válidamente, sin dejar la orden en estado contradictorio (FR-008) en `tests/integration/OrderStatusConcurrencyTest.java`
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] `OrderStatusService.changeStatus`: añadir la rama DISPATCHER/SUPERVISOR — valida que `(origen, destino)` esté en la tabla de adyacencia (T007), que el destino `pending_review` exija `!order.getEvidencePhotos().isEmpty()` (FR-005), que `closed` nunca sea origen (FR-006), y que mover a `draft` limpie `order.setAssignedTechnician(null)` (data-model.md) en `src/backend/src/main/java/com/fieldops/service/OrderStatusService.java` (depende de T007 — mismo archivo, tarea secuencial)
+- [X] T022 [US2] `OrderStatusService.changeStatus`: añadir la rama DISPATCHER/SUPERVISOR — valida que `(origen, destino)` esté en la tabla de adyacencia (T007), que el destino `pending_review` exija `!order.getEvidencePhotos().isEmpty()` (FR-005), que `closed` nunca sea origen (FR-006), y que mover a `draft` limpie `order.setAssignedTechnician(null)` (data-model.md) en `src/backend/src/main/java/com/fieldops/service/OrderStatusService.java` (depende de T007 — mismo archivo, tarea secuencial)
 - [ ] T022a [US2] Frontend: control de corrección manual de estado en `order-detail.component` — visible solo para `DISPATCHER`/`SUPERVISOR` y solo si `currentOrder.status !== 'closed'`; calcula el/los destino(s) adyacente(s) válidos a partir del estado actual (misma tabla de adyacencia de T007, replicada como constante en el frontend) y ofrece un botón por cada uno (p. ej. desde `assigned`: "Mover a draft" y "Mover a in_progress"; desde `pending_review`: "Mover a in_progress" y "Mover a closed") en `src/frontend/src/app/orders/order-detail.component.ts` y `order-detail.component.html` (depende de T009)
 - [ ] T022b [P] [US2] Frontend unit test: el control de corrección manual aparece solo para DISPATCHER/SUPERVISOR, ofrece exactamente los destinos adyacentes al estado actual, y no aparece en absoluto sobre una orden `closed` en `src/frontend/src/app/orders/order-detail.component.spec.ts`
 
