@@ -59,24 +59,32 @@ jobs:
             en vez de solo hacer pull, un permiso más amplio del necesario,
             un endpoint sin distinguir 401 de 403, etc.).
 
-            Responde exclusivamente con la estructura de salida solicitada.
+            Termina tu respuesta con EXACTAMENTE una de estas dos líneas,
+            sin nada más después:
+            CONSTITUTION_OK
+            o
+            CONSTITUTION_VIOLATION: <motivo concreto en una frase>
           claude_args: |
             --max-turns 8
-            --json-schema '{"type":"object","required":["violation","reason"],"properties":{"violation":{"type":"boolean"},"reason":{"type":"string"}}}'
 
       - name: Fallar el check si se detectó una violación
         shell: bash
         run: |
-          OUTPUT='${{ steps.guardian.outputs.structured_output }}'
-          if [ -z "$OUTPUT" ]; then
-            echo "El guardián no devolvió una salida estructurada — se trata como fallo (no se puede confirmar que no hay violación)."
+          FILE="${{ steps.guardian.outputs.execution_file }}"
+          if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
+            echo "El guardián no devolvió un archivo de ejecución — se trata como fallo (no se puede confirmar que no hay violación)."
             exit 1
           fi
-          VIOLATION=$(echo "$OUTPUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('violation', True))" 2>/dev/null || echo "true")
-          REASON=$(echo "$OUTPUT" | python3 -c "import json,sys; print(json.load(sys.stdin).get('reason',''))" 2>/dev/null || echo "salida no parseable")
-          echo "Motivo reportado por el guardián: $REASON"
-          if [ "$VIOLATION" != "False" ] && [ "$VIOLATION" != "false" ]; then
-            echo "::error::Violación de constitution detectada: $REASON"
+          # execution_file es JSONL de mensajes del SDK; el texto final de
+          # Claude vive en el último mensaje "assistant" con bloques "text".
+          TEXT=$(python3 "${{ github.workspace }}/.github/scripts/extract-guardian-text.py" "$FILE")
+          echo "Respuesta del guardián: $TEXT"
+          if echo "$TEXT" | grep -q "CONSTITUTION_VIOLATION"; then
+            echo "::error::Violación de constitution detectada: $TEXT"
+            exit 1
+          fi
+          if ! echo "$TEXT" | grep -q "CONSTITUTION_OK"; then
+            echo "El guardián no confirmó explícitamente CONSTITUTION_OK — se trata como fallo."
             exit 1
           fi
           echo "Sin violaciones detectadas."
