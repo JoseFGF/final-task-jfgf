@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { OrderApiService } from './order-api.service';
 import { OrderSummary } from './order.model';
+import { AuthService } from '../core/auth.service';
 
 /**
  * Lista de órdenes visibles para el usuario autenticado (US1, FR-001 a
@@ -21,6 +22,12 @@ export class OrderListComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
 
   private readonly orderApi = inject(OrderApiService);
+  private readonly authService = inject(AuthService);
+
+  /** `true` si el usuario autenticado es DISPATCHER (US3): solo él puede crear órdenes. */
+  get canCreateOrder(): boolean {
+    return this.authService.hasRole('DISPATCHER');
+  }
 
   ngOnInit(): void {
     this.orderApi.listOrders().subscribe({
