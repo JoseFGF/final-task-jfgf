@@ -5,8 +5,9 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 import { OrderDetailComponent } from './order-detail.component';
 import { OrderApiService } from './order-api.service';
-import { OrderDetail } from './order.model';
+import { OrderDetail, OrderStatus } from './order.model';
 import { AuthService } from '../core/auth.service';
+import { UserRole } from '../core/auth.model';
 
 describe('OrderDetailComponent', () => {
   let fixture: ComponentFixture<OrderDetailComponent>;
@@ -25,18 +26,27 @@ describe('OrderDetailComponent', () => {
     rejectionComment: null,
   };
 
-  function configure(order: OrderDetail, hasRole = false): void {
+  function configure(
+    order: OrderDetail,
+    hasRole: boolean | ((...roles: UserRole[]) => boolean) = false,
+  ): void {
     orderApiSpy = jasmine.createSpyObj<OrderApiService>('OrderApiService', [
       'getOrderDetail',
       'getEvidencePhoto',
+      'changeOrderStatus',
     ]);
     orderApiSpy.getOrderDetail.and.returnValue(of(order));
     orderApiSpy.getEvidencePhoto.and.callFake((_orderId: string, photoId: string) =>
       of(new Blob([`contenido-${photoId}`], { type: 'image/jpeg' })),
     );
+    orderApiSpy.changeOrderStatus.and.returnValue(of(order));
 
     authServiceSpy = jasmine.createSpyObj<AuthService>('AuthService', ['hasRole']);
-    authServiceSpy.hasRole.and.returnValue(hasRole);
+    if (typeof hasRole === 'function') {
+      authServiceSpy.hasRole.and.callFake(hasRole);
+    } else {
+      authServiceSpy.hasRole.and.returnValue(hasRole);
+    }
 
     TestBed.configureTestingModule({
       imports: [OrderDetailComponent],
@@ -127,5 +137,94 @@ describe('OrderDetailComponent', () => {
     const images = fixture.nativeElement.querySelectorAll('img');
     expect(images.length).toBe(0);
     expect(fixture.nativeElement.textContent).not.toContain('Evidencia fotográfica');
+  });
+
+  describe('"Iniciar trabajo" (US1, T011)', () => {
+    it('aparece para TECHNICIAN sobre una orden assigned y llama a changeOrderStatus al pulsarlo', () => {
+      configure({ ...baseOrder, status: 'assigned' }, (role) => role === 'TECHNICIAN');
+
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.canStartWork()).toBeTrue();
+      const button = Array.from<HTMLButtonElement>(
+        fixture.nativeElement.querySelectorAll('button'),
+      ).find((el) => el.textContent?.includes('Iniciar trabajo'));
+      expect(button).toBeTruthy();
+
+      button!.click();
+
+      expect(orderApiSpy.changeOrderStatus).toHaveBeenCalledWith('order-1', 'in_progress');
+      expect(orderApiSpy.getOrderDetail).toHaveBeenCalledTimes(2);
+    });
+
+    it('no aparece para TECHNICIAN si la orden no está assigned', () => {
+      configure({ ...baseOrder, status: 'in_progress' }, (role) => role === 'TECHNICIAN');
+
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.canStartWork()).toBeFalse();
+      expect(fixture.nativeElement.textContent).not.toContain('Iniciar trabajo');
+    });
+
+    it('no aparece para un rol distinto de TECHNICIAN aunque la orden esté assigned', () => {
+      configure({ ...baseOrder, status: 'assigned' }, (role) => role === 'DISPATCHER');
+
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.canStartWork()).toBeFalse();
+      expect(fixture.nativeElement.textContent).not.toContain('Iniciar trabajo');
+    });
+  });
+
+  describe('Corrección manual de estado (US2, T022b)', () => {
+    const cases: { status: OrderStatus; expected: OrderStatus[] }[] = [
+      { status: 'assigned', expected: ['draft', 'in_progress'] },
+      { status: 'in_progress', expected: ['assigned', 'pending_review'] },
+      { status: 'pending_review', expected: ['in_progress', 'closed'] },
+    ];
+
+    for (const { status, expected } of cases) {
+      it(`ofrece exactamente los destinos adyacentes esperados desde ${status} para DISPATCHER/SUPERVISOR`, () => {
+        configure({ ...baseOrder, status }, (role) => role === 'DISPATCHER' || role === 'SUPERVISOR');
+
+        fixture.detectChanges();
+
+        expect(fixture.componentInstance.manualStatusOptions()).toEqual(expected);
+        expect(fixture.componentInstance.canChangeStatusManually()).toBeTrue();
+
+        for (const target of expected) {
+          expect(fixture.nativeElement.textContent).toContain(`Mover a ${target}`);
+        }
+      });
+    }
+
+    it('llama a changeOrderStatus con el destino elegido y recarga la orden', () => {
+      configure({ ...baseOrder, status: 'in_progress' }, (role) => role === 'DISPATCHER');
+
+      fixture.detectChanges();
+      fixture.componentInstance.changeStatusManually('pending_review');
+
+      expect(orderApiSpy.changeOrderStatus).toHaveBeenCalledWith('order-1', 'pending_review');
+      expect(orderApiSpy.getOrderDetail).toHaveBeenCalledTimes(2);
+    });
+
+    it('no aparece para un TECHNICIAN', () => {
+      configure({ ...baseOrder, status: 'assigned' }, (role) => role === 'TECHNICIAN');
+
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.canChangeStatusManually()).toBeFalse();
+      expect(fixture.nativeElement.textContent).not.toContain('Corrección manual de estado');
+    });
+
+    it('no aparece en absoluto sobre una orden closed, aunque el rol sea DISPATCHER/SUPERVISOR', () => {
+      configure({ ...baseOrder, status: 'closed' }, (role) => role === 'DISPATCHER' || role === 'SUPERVISOR');
+
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.manualStatusOptions()).toEqual([]);
+      expect(fixture.componentInstance.canChangeStatusManually()).toBeFalse();
+      expect(fixture.nativeElement.textContent).not.toContain('Corrección manual de estado');
+    });
   });
 });
