@@ -9,14 +9,20 @@ import java.util.UUID;
 public record OrderSummaryResponse(
     UUID id,
     OrderStatus status,
-    UUID assignedTechnicianId,
+    String description,
+    String assignedTechnicianEmail,
     Instant createdAt,
     Instant updatedAt) {
 
   public static OrderSummaryResponse from(Order order) {
-    UUID assignedTechnicianId =
-        order.getAssignedTechnician() == null ? null : order.getAssignedTechnician().getId();
+    String assignedTechnicianEmail =
+        order.getAssignedTechnician() == null ? null : order.getAssignedTechnician().getEmail();
     return new OrderSummaryResponse(
-        order.getId(), order.getStatus(), assignedTechnicianId, order.getCreatedAt(), order.getUpdatedAt());
+        order.getId(),
+        order.getStatus(),
+        order.getDescription(),
+        assignedTechnicianEmail,
+        order.getCreatedAt(),
+        order.getUpdatedAt());
   }
 }

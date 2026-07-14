@@ -14,7 +14,8 @@ describe('ExecutionFormComponent', () => {
   const baseOrder: OrderDetail = {
     id: 'order-1',
     status: 'in_progress',
-    assignedTechnicianId: 'tech-1',
+    assignedTechnicianEmail: 'tecnico@fieldops.com',
+    description: 'Revisión de panel eléctrico',
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     executionNote: null,

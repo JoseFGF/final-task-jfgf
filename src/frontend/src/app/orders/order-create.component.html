@@ -1,0 +1,60 @@
+<section class="mx-auto max-w-2xl px-4 py-8">
+  <a
+    routerLink="/orders"
+    class="text-sm text-blue-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+  >
+    ← Volver a mis órdenes
+  </a>
+
+  <h2 class="mt-4 text-xl font-semibold text-gray-900">Crear orden</h2>
+
+  @if (submitErrorMessage()) {
+    <p class="mt-4 rounded-md bg-red-50 p-4 text-sm text-red-800" role="alert">
+      {{ submitErrorMessage() }}
+    </p>
+  }
+
+  <form class="mt-6 space-y-6" [formGroup]="form" (ngSubmit)="create()">
+    <div>
+      <label for="description" class="block text-sm font-medium text-gray-700">
+        Descripción
+      </label>
+      <textarea
+        id="description"
+        formControlName="description"
+        rows="4"
+        required
+        aria-describedby="description-hint"
+        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      ></textarea>
+      <p id="description-hint" class="mt-1 text-sm text-gray-500">
+        Describe el trabajo a realizar.
+      </p>
+    </div>
+
+    <div>
+      <label for="technicianEmail" class="block text-sm font-medium text-gray-700">
+        Email del technician (opcional)
+      </label>
+      <input
+        id="technicianEmail"
+        type="email"
+        formControlName="technicianEmail"
+        aria-describedby="technicianEmail-hint"
+        placeholder="p. ej. tecnico@fieldops.com"
+        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      />
+      <p id="technicianEmail-hint" class="mt-1 text-sm text-gray-500">
+        Si no se indica, la orden queda como borrador sin asignar.
+      </p>
+    </div>
+
+    <button
+      type="submit"
+      [disabled]="!canSubmit"
+      class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-300"
+    >
+      {{ submitting() ? 'Creando…' : 'Crear orden' }}
+    </button>
+  </form>
+</section>

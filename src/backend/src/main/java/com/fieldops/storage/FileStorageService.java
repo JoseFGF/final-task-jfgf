@@ -1,9 +1,11 @@
 package com.fieldops.storage;
 
+import com.fieldops.exception.NotFoundException;
 import com.fieldops.exception.ValidationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
@@ -14,6 +16,8 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -63,6 +67,27 @@ public class FileStorageService {
       return new StoredFile(target.toString(), photo.getContentType(), Files.size(target));
     } catch (IOException e) {
       throw new UncheckedIOException("No se pudo guardar la foto de evidencia", e);
+    }
+  }
+
+  /**
+   * Carga como {@link Resource} el archivo ya guardado en {@code
+   * storagePath} (ruta absoluta persistida por {@link #store}), para
+   * servirlo en streaming (US4, ADR-006). Lanza {@link NotFoundException}
+   * (404) si el archivo referenciado ya no existe en el volumen — el
+   * llamador decide cómo reaccionar (FR-010: el resto de fotos de la orden
+   * debe seguir mostrándose).
+   */
+  public Resource loadAsResource(String storagePath) {
+    try {
+      Path file = Path.of(storagePath);
+      Resource resource = new UrlResource(file.toUri());
+      if (!resource.exists() || !resource.isReadable()) {
+        throw new NotFoundException("La foto de evidencia ya no existe en el almacenamiento");
+      }
+      return resource;
+    } catch (MalformedURLException e) {
+      throw new NotFoundException("La foto de evidencia ya no existe en el almacenamiento");
     }
   }
 

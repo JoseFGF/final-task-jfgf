@@ -1,10 +1,10 @@
 package com.fieldops.dto;
 
-import jakarta.validation.constraints.NotNull;
-import java.util.UUID;
+import jakarta.validation.constraints.NotBlank;
 
 /**
- * Body de {@code POST /orders/{orderId}/reassignment} (US4), según
- * contracts/openapi.yaml.
+ * Body de {@code POST /orders/{orderId}/reassignment} (US1, US4), según
+ * contracts/openapi.yaml. El technician se identifica por su email (FR-001),
+ * no por su UUID interno (ADR-005, research.md).
  */
-public record ReassignmentRequest(@NotNull UUID newTechnicianId) {}
+public record ReassignmentRequest(@NotBlank String newTechnicianEmail) {}

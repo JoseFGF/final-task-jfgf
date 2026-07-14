@@ -14,7 +14,8 @@ describe('ReviewComponent', () => {
   const baseOrder: OrderDetail = {
     id: 'order-1',
     status: 'pending_review',
-    assignedTechnicianId: 'tech-1',
+    assignedTechnicianEmail: 'tecnico@fieldops.com',
+    description: 'Revisión de panel eléctrico',
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     executionNote: 'Trabajo realizado según lo pactado',

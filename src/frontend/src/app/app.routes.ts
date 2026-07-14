@@ -13,6 +13,12 @@ export const routes: Routes = [
       import('./orders/order-list.component').then((m) => m.OrderListComponent),
   },
   {
+    path: 'orders/new',
+    canActivate: [authGuard, roleGuard('DISPATCHER')],
+    loadComponent: () =>
+      import('./orders/order-create.component').then((m) => m.OrderCreateComponent),
+  },
+  {
     path: 'orders/:id',
     canActivate: [authGuard],
     loadComponent: () =>

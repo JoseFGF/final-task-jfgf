@@ -1,4 +1,5 @@
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fieldops.model.Role;
@@ -38,5 +39,16 @@ class OrdersListContractTest extends BaseIntegrationTest {
   @Test
   void rejectsRequestWithoutSession() throws Exception {
     mockMvc.perform(get(ORDERS_PATH)).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void exposesAssignedTechnicianByEmailNotByUuid() throws Exception {
+    String token = jwtService.generateToken(SEED_DISPATCHER_ID, Role.DISPATCHER);
+
+    mockMvc
+        .perform(get(ORDERS_PATH).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[?(@.assignedTechnicianEmail == 'technician@fieldops.test')]").exists())
+        .andExpect(jsonPath("$[*].assignedTechnicianId").doesNotExist());
   }
 }

@@ -65,7 +65,7 @@ jobs:
             o
             CONSTITUTION_VIOLATION: <motivo concreto en una frase>
           claude_args: |
-            --max-turns 8
+            --max-turns 20
 
       - name: Fallar el check si se detectó una violación
         shell: bash
@@ -82,12 +82,21 @@ jobs:
           # Claude vive en el último mensaje "assistant" con bloques "text".
           TEXT=$(python3 "${{ github.workspace }}/.github/scripts/extract-guardian-text.py" "$FILE")
           echo "Respuesta del guardián: $TEXT"
-          if echo "$TEXT" | grep -q "CONSTITUTION_VIOLATION"; then
-            echo "::error::Violación de constitution detectada: $TEXT"
+          # Solo cuenta la ÚLTIMA línea no vacía como veredicto (tal como pide
+          # el prompt: "termina tu respuesta con EXACTAMENTE una de estas dos
+          # líneas"). Un `grep` sobre todo $TEXT daba falsos positivos cuando
+          # la respuesta del agente citaba/mencionaba la cadena
+          # "CONSTITUTION_VIOLATION" en cualquier otra parte (p. ej. al citar
+          # el diff de este mismo archivo, que contiene esas cadenas como
+          # texto literal del prompt).
+          VERDICT=$(echo "$TEXT" | grep -v '^[[:space:]]*$' | tail -n 1)
+          echo "Línea de veredicto: $VERDICT"
+          if echo "$VERDICT" | grep -q "^CONSTITUTION_VIOLATION"; then
+            echo "::error::Violación de constitution detectada: $VERDICT"
             exit 1
           fi
-          if ! echo "$TEXT" | grep -q "CONSTITUTION_OK"; then
-            echo "El guardián no confirmó explícitamente CONSTITUTION_OK — se trata como fallo."
+          if ! echo "$VERDICT" | grep -q "^CONSTITUTION_OK"; then
+            echo "El guardián no confirmó explícitamente CONSTITUTION_OK como última línea — se trata como fallo."
             exit 1
           fi
           echo "Sin violaciones detectadas."

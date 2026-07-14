@@ -127,6 +127,12 @@ manuales por historia de usuario (US1-US5), la verificación de RBAC en doble
 capa (401 sin token, 403 con rol incorrecto) y el procedimiento para medir
 SC-004 (tiempo de registro de ejecución end-to-end).
 
+`specs/003-order-management-enhancements/quickstart.md` añade los
+escenarios de la asignación/reasignación por email (en vez de UUID), la
+corrección del bug de asignación inicial sobre órdenes en `draft`, la
+creación de órdenes por el dispatcher, y la visualización autenticada de
+fotos de evidencia.
+
 ## Estructura del repositorio
 
 - `src/backend/` — API Spring Boot (Java 21).
@@ -139,6 +145,9 @@ SC-004 (tiempo de registro de ejecución end-to-end).
   componente de IA.
 - `specs/001-order-lifecycle-workflow/` — spec, plan, tareas y quickstart de
   este slice.
+- `specs/003-order-management-enhancements/` — spec, plan, tareas y
+  quickstart de la asignación por email, creación de órdenes y
+  visualización de fotos de evidencia.
 - `docs/traceability.md`, `docs/assumptions.md` — trazabilidad
   criterio-test y suposiciones registradas.
 - `.specify/memory/constitution.md` — principios no negociables del
@@ -216,6 +225,14 @@ durante `/speckit.implement` al detectarse que ninguna historia de usuario
 original cubría cómo obtener un token real (los tests generan el JWT
 directamente vía `JwtService`, sin pasar por HTTP); no hay alta ni registro
 de usuarios, solo login contra los cuatro usuarios fijos de arriba.
+
+**Novedades (feature 003)**: el dispatcher asigna/reasigna un technician por
+su **email** (`newTechnicianEmail`), no por UUID — incluida la asignación
+inicial sobre una orden en `draft` (antes era un bug: solo se podía
+reasignar una orden ya asignada). El dispatcher también puede crear órdenes
+nuevas (`POST /orders`, campo `description` obligatorio, `technicianEmail`
+opcional), y el detalle de una orden muestra sus fotos de evidencia
+directamente (antes no se mostraban).
 
 Ejemplo de login y uso del token contra un endpoint protegido:
 

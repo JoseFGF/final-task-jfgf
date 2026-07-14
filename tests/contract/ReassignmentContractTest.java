@@ -25,9 +25,8 @@ class ReassignmentContractTest extends BaseIntegrationTest {
 
   private static final UUID DISPATCHER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
   private static final UUID TECHNICIAN_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
-  private static final UUID OTHER_TECHNICIAN_ID =
-      UUID.fromString("44444444-4444-4444-4444-444444444444");
   private static final UUID SUPERVISOR_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+  private static final String OTHER_TECHNICIAN_EMAIL = "technician2@fieldops.test";
 
   @Autowired private MockMvc mockMvc;
   @Autowired private JwtService jwtService;
@@ -41,7 +40,7 @@ class ReassignmentContractTest extends BaseIntegrationTest {
     String token = jwtService.generateToken(DISPATCHER_ID, Role.DISPATCHER);
 
     mockMvc
-        .perform(reassignmentRequest(order.getId(), token, OTHER_TECHNICIAN_ID))
+        .perform(reassignmentRequest(order.getId(), token, OTHER_TECHNICIAN_EMAIL))
         .andExpect(status().isOk());
   }
 
@@ -55,7 +54,7 @@ class ReassignmentContractTest extends BaseIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
-                        Map.of("newTechnicianId", OTHER_TECHNICIAN_ID.toString()))))
+                        Map.of("newTechnicianEmail", OTHER_TECHNICIAN_EMAIL))))
         .andExpect(status().isUnauthorized());
   }
 
@@ -65,7 +64,7 @@ class ReassignmentContractTest extends BaseIntegrationTest {
     String token = jwtService.generateToken(SUPERVISOR_ID, Role.SUPERVISOR);
 
     mockMvc
-        .perform(reassignmentRequest(order.getId(), token, OTHER_TECHNICIAN_ID))
+        .perform(reassignmentRequest(order.getId(), token, OTHER_TECHNICIAN_EMAIL))
         .andExpect(status().isForbidden());
   }
 
@@ -74,7 +73,7 @@ class ReassignmentContractTest extends BaseIntegrationTest {
     String token = jwtService.generateToken(DISPATCHER_ID, Role.DISPATCHER);
 
     mockMvc
-        .perform(reassignmentRequest(UUID.randomUUID(), token, OTHER_TECHNICIAN_ID))
+        .perform(reassignmentRequest(UUID.randomUUID(), token, OTHER_TECHNICIAN_EMAIL))
         .andExpect(status().isNotFound());
   }
 
@@ -84,17 +83,27 @@ class ReassignmentContractTest extends BaseIntegrationTest {
     String token = jwtService.generateToken(DISPATCHER_ID, Role.DISPATCHER);
 
     mockMvc
-        .perform(reassignmentRequest(order.getId(), token, OTHER_TECHNICIAN_ID))
+        .perform(reassignmentRequest(order.getId(), token, OTHER_TECHNICIAN_EMAIL))
         .andExpect(status().isConflict());
   }
 
+  @Test
+  void rejectsAnEmailThatDoesNotBelongToATechnician() throws Exception {
+    Order order = createOrder(OrderStatus.assigned);
+    String token = jwtService.generateToken(DISPATCHER_ID, Role.DISPATCHER);
+
+    mockMvc
+        .perform(reassignmentRequest(order.getId(), token, "supervisor@fieldops.test"))
+        .andExpect(status().isUnprocessableEntity());
+  }
+
   private MockHttpServletRequestBuilder reassignmentRequest(
-      UUID orderId, String token, UUID newTechnicianId) throws Exception {
+      UUID orderId, String token, String newTechnicianEmail) throws Exception {
     return post("/api/v1/orders/{orderId}/reassignment", orderId)
         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
         .contentType(MediaType.APPLICATION_JSON)
         .content(
-            objectMapper.writeValueAsString(Map.of("newTechnicianId", newTechnicianId.toString())));
+            objectMapper.writeValueAsString(Map.of("newTechnicianEmail", newTechnicianEmail)));
   }
 
   private Order createOrder(OrderStatus status) {

@@ -14,7 +14,8 @@ describe('ReassignmentComponent', () => {
   const baseOrder: OrderDetail = {
     id: 'order-1',
     status: 'in_progress',
-    assignedTechnicianId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    assignedTechnicianEmail: 'tecnico.actual@fieldops.com',
+    description: 'Revisión de panel eléctrico',
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     executionNote: null,
@@ -22,7 +23,7 @@ describe('ReassignmentComponent', () => {
     rejectionComment: null,
   };
 
-  const newTechnicianId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+  const newTechnicianEmail = 'nuevo.tecnico@fieldops.com';
 
   function configure(order: OrderDetail): void {
     orderApiSpy = jasmine.createSpyObj<OrderApiService>('OrderApiService', [
@@ -51,26 +52,26 @@ describe('ReassignmentComponent', () => {
   it('reasigna la orden y navega al detalle en el camino feliz', () => {
     configure(baseOrder);
     orderApiSpy.reassignOrder.and.returnValue(
-      of({ ...baseOrder, assignedTechnicianId: newTechnicianId }),
+      of({ ...baseOrder, assignedTechnicianEmail: newTechnicianEmail }),
     );
     spyOn(router, 'navigate').and.resolveTo(true);
 
     const component = fixture.componentInstance;
-    component.form.controls.newTechnicianId.setValue(newTechnicianId);
+    component.form.controls.newTechnicianEmail.setValue(newTechnicianEmail);
 
     expect(component.canSubmit).toBeTrue();
 
     component.reassign();
 
-    expect(orderApiSpy.reassignOrder).toHaveBeenCalledWith('order-1', newTechnicianId);
+    expect(orderApiSpy.reassignOrder).toHaveBeenCalledWith('order-1', newTechnicianEmail);
     expect(router.navigate).toHaveBeenCalledWith(['/orders', 'order-1']);
   });
 
-  it('no envía la reasignación si el UUID introducido no tiene formato válido', () => {
+  it('no envía la reasignación si el email introducido no tiene formato válido', () => {
     configure(baseOrder);
 
     const component = fixture.componentInstance;
-    component.form.controls.newTechnicianId.setValue('no-es-un-uuid');
+    component.form.controls.newTechnicianEmail.setValue('no-es-un-email');
 
     expect(component.canSubmit).toBeFalse();
 
@@ -88,7 +89,7 @@ describe('ReassignmentComponent', () => {
     orderApiSpy.reassignOrder.and.returnValue(throwError(() => errorResponse));
 
     const component = fixture.componentInstance;
-    component.form.controls.newTechnicianId.setValue(newTechnicianId);
+    component.form.controls.newTechnicianEmail.setValue(newTechnicianEmail);
     component.reassign();
 
     expect(component.submitErrorMessage()).toBe(
@@ -105,7 +106,7 @@ describe('ReassignmentComponent', () => {
     orderApiSpy.reassignOrder.and.returnValue(throwError(() => errorResponse));
 
     const component = fixture.componentInstance;
-    component.form.controls.newTechnicianId.setValue(newTechnicianId);
+    component.form.controls.newTechnicianEmail.setValue(newTechnicianEmail);
     component.reassign();
 
     expect(component.submitErrorMessage()).toBe(

@@ -73,6 +73,19 @@ class OrderDetailContractTest extends BaseIntegrationTest {
   }
 
   @Test
+  void exposesAssignedTechnicianByEmailNotByUuid() throws Exception {
+    String token = jwtService.generateToken(SEED_DISPATCHER_ID, Role.DISPATCHER);
+
+    mockMvc
+        .perform(
+            get("/api/v1/orders/{orderId}", ORDER_ASSIGNED_TO_SEED_TECHNICIAN)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.assignedTechnicianEmail").value("technician@fieldops.test"))
+        .andExpect(jsonPath("$.assignedTechnicianId").doesNotExist());
+  }
+
+  @Test
   void returnsNotFoundForAnUnknownOrder() throws Exception {
     String token = jwtService.generateToken(SEED_DISPATCHER_ID, Role.DISPATCHER);
 
