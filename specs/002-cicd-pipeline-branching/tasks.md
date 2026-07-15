@@ -158,6 +158,7 @@ esos nombres literales.
 **Purpose**: Cierre transversal que no pertenece a ninguna historia (protege el propio pipeline) y verificación final.
 
 - [X] T048 [P] Crear `.github/workflows/pipeline-config-guardian.yml`, trigger `pull_request` con `paths: ['.github/workflows/**', 'pipeline-constitution.md', 'pipeline-spec.md']`, job `constitution-guardian` reutilizando el workflow de T003 (FR-020) — usa la ruta real `specs/002-cicd-pipeline-branching/**` en vez del nombre genérico `pipeline-spec.md` (que no existe como archivo en este repo)
+- [X] T055 Añadir job `workflow-lint` en `pipeline-config-guardian.yml` (actionlint vía contenedor Docker fijado por digest, `.github/actions-pins.md`) — no exigido por el reto, capa extra de verificación de sintaxis de los propios workflows añadida el 2026-07-15; corrido localmente contra los 8 workflows antes de commitear, exit code 0
 - [ ] T049 Añadir el check `constitution-guardian` (vía `pipeline-config-guardian.yml`) a la protección de rama de `develop` y de `main` — **requiere acceso de administrador al repo, ver `.github/ENVIRONMENTS_SETUP.md`**
 - [ ] T050 Verificación manual: ejecutar el Escenario 7 de `quickstart.md` — **pendiente: requiere GitHub Actions real**
 - [X] T051 [P] Auditar los 7 workflows y confirmar que toda Action de terceros está fijada por SHA, no por tag (Principio III) — auditado con grep real, 0 coincidencias de `@v`/`@master`/`@main`

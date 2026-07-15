@@ -19,6 +19,16 @@ permissions:
   contents: read
 
 jobs:
+  workflow-lint:
+    name: workflow-lint
+    runs-on: ubuntu-latest
+    container:
+      image: docker://rhysd/actionlint@sha256:9d36088643581e728c969f35141f88139fec77280b2be23c1f66f8e40e1025e7
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: actionlint sobre .github/workflows/**
+        run: actionlint -color
+
   constitution-guardian:
     name: constitution-guardian
     permissions:

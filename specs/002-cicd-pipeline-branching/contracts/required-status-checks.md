@@ -34,6 +34,7 @@ nunca).
 
 | Job (nombre exacto de check) | Corresponde a |
 |---|---|
+| `workflow-lint` | No exigido por el reto; verificación extra de sintaxis (`actionlint`) sobre los propios workflows, añadida el 2026-07-15 |
 | `constitution-guardian` | FR-020 (mismo job/nombre que en los dos anteriores, reutilizado — no un guardián distinto) |
 
 ## `ci-develop-back.yml` / `ci-develop-front.yml` (dispara: push a `develop`, filtrado por componente)

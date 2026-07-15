@@ -21,6 +21,14 @@ aplica).
 | `peter-evans/create-pull-request` | v8.1.1 | `5f6978faf089d4d20b00c7766989d076bb2fc7f1` |
 | `anthropics/claude-code-action` | v1.0.171 | `e90deca47693f9457b72f2b53c17d7c445a87342` |
 
+**Nota sobre `workflow-lint` (actionlint)**: no requerido por el enunciado del
+reto, añadido como capa extra de verificación (2026-07-15) sobre el propio
+`pipeline-config-guardian.yml`. Igual que Gitleaks, se invoca vía contenedor
+Docker fijado por digest, no por la Action wrapper:
+`docker://rhysd/actionlint@sha256:9d36088643581e728c969f35141f88139fec77280b2be23c1f66f8e40e1025e7`
+(tag `latest`, verificado el 2026-07-15 contra Docker Hub). Corrido localmente
+contra los 8 workflows antes de commitear: exit code 0, sin hallazgos.
+
 **Nota sobre Gitleaks**: la Action gestionada `gitleaks/gitleaks-action`
 exige una licencia (`GITLEAKS_LICENSE`) en repos privados/de organización;
 es gratuita solo en repos públicos de cuenta personal. Para no depender de
