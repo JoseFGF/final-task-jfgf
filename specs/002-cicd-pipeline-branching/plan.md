@@ -4,7 +4,7 @@
 
 **Input**: Feature specification from `specs/002-cicd-pipeline-branching/spec.md`
 
-**Constitution que rige este feature**: `pipeline-constitution.md` (v1.1.0,
+**Constitution que rige este feature**: `.specify/pipeline-constitution.md` (v1.1.0,
 raíz del repo) — no `.specify/memory/constitution.md`, que rige el desarrollo
 de la aplicación y es un documento independiente.
 
@@ -56,7 +56,7 @@ en sí); dos componentes desplegables independientes ya existentes
 mínimos declarados por workflow (Principio IV); ningún job de despliegue
 reconstruye (Principio V); `prod` exige aprobación de una lista de revisores
 concreta, no cualquier mantenedor (Clarify); `hotfix/*` es la única
-excepción al camino feature→develop→main (pipeline-constitution.md v1.1.0);
+excepción al camino feature→develop→main (.specify/pipeline-constitution.md v1.1.0);
 Trivy bloquea la fusión solo ante severidad CRITICAL/HIGH, reportando
 MEDIUM/LOW sin bloquear (ADR-P8, añadido en la revisión de checklist de
 spec-quality); el gate de PR se mide en tiempo de reloj real incluyendo cola
@@ -71,7 +71,7 @@ proyecto, no una organización con decenas de servicios).
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-| Principio (`pipeline-constitution.md` v1.1.0) | Estado | Cómo se cumple |
+| Principio (`.specify/pipeline-constitution.md` v1.1.0) | Estado | Cómo se cumple |
 |---|---|---|
 | I. Spec-Antes-Que-YAML | PASS | `spec.md` y este `plan.md` se commitean antes que cualquier archivo en `.github/workflows/` |
 | II. Flujos Independientes por Componente | PASS | `paths:` por componente en los 6 workflows principales (ADR-P1) |
@@ -104,13 +104,14 @@ specs/002-cicd-pipeline-branching/
 └── workflows/
     ├── pr-validation-back.yml
     ├── pr-validation-front.yml
-    ├── pipeline-config-guardian.yml   # cambios a .github/workflows/**, pipeline-constitution.md, pipeline-spec.md
+    ├── pipeline-config-guardian.yml   # cambios a .github/workflows/**, .specify/pipeline-constitution.md, pipeline-spec.md
     ├── ci-develop-back.yml
     ├── ci-develop-front.yml
     ├── ci-main-back.yml               # incluye la ruta de hotfix (ADR-P3), sin workflow separado
     └── ci-main-front.yml
 
-pipeline-constitution.md   # ya existe, v1.1.0
+.specify/pipeline-constitution.md   # ya existe, v1.1.0 (movido a .specify/ el 2026-07-15)
+pipeline-spec.md   # puntero al spec real (añadido el 2026-07-15)
 specs/002-cicd-pipeline-branching/spec.md   # ya existe
 ```
 

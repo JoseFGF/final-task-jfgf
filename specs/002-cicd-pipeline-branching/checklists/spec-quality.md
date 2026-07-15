@@ -25,7 +25,7 @@ cambiado desde entonces.
 ## Requirement Consistency
 
 - [x] CHK008 - ¿Son consistentes las User Story 4 (versión automática) y FR-010/FR-011 tras la clarificación de sesión 2026-07-13, sin quedar ninguna mención residual a un tag manual? [Consistency, Spec §Clarifications] — Verificado: se buscaron menciones a "tag"/"manual" en todo spec.md; ninguna contradice la versión automática (la única mención de intervención manual no relacionada es FR-006, sobre detección de componente, no sobre versionado).
-- [x] CHK009 - ¿Es consistente el trato de `hotfix/*` entre `spec.md` (User Story 6, FR-017 a FR-019) y `pipeline-constitution.md` v1.1.0 (Estrategia de ramas), sin contradicciones sobre si pasa por los mismos gates? [Consistency, Spec §User Story 6] — Verificado: pipeline-constitution.md v1.1.0 dice explícitamente que hotfix "no queda exenta de ninguna validación... pasa exactamente por los mismos" gates, coherente con FR-017/FR-018 y ADR-P3 (mismo workflow que main, sin ruta paralela).
+- [x] CHK009 - ¿Es consistente el trato de `hotfix/*` entre `spec.md` (User Story 6, FR-017 a FR-019) y `.specify/pipeline-constitution.md` v1.1.0 (Estrategia de ramas), sin contradicciones sobre si pasa por los mismos gates? [Consistency, Spec §User Story 6] — Verificado: .specify/pipeline-constitution.md v1.1.0 dice explícitamente que hotfix "no queda exenta de ninguna validación... pasa exactamente por los mismos" gates, coherente con FR-017/FR-018 y ADR-P3 (mismo workflow que main, sin ruta paralela).
 
 ## Acceptance Criteria Quality
 

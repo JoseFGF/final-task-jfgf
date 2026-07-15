@@ -55,6 +55,6 @@ material del módulo enseña GHCR en detalle (login con `GITHUB_TOKEN`, sin
 secrets adicionales) pero su diapositiva de "Criterios de éxito" dice
 literalmente "Imagen en ACR" (Azure Container Registry). Esta
 implementación usa **GHCR** de punta a punta, consistente con el resto del
-módulo y con `pipeline-constitution.md`. Si el criterio de evaluación real
+módulo y con `.specify/pipeline-constitution.md`. Si el criterio de evaluación real
 exige ACR, haría falta añadir login/push a Azure Container Registry (con
 OIDC, coherente con el resto del módulo) además de o en vez de GHCR.

@@ -35,7 +35,7 @@
   `## Clarifications` en `spec.md`): versión calculada automáticamente por el
   pipeline (no tag manual), lista de revisores concreta para producción (no
   cualquier mantenedor), y existencia de ruta de hotfix directa a `main`
-  (añadida FR-017 a FR-019, User Story 6, y `pipeline-constitution.md` v1.1.0
+  (añadida FR-017 a FR-019, User Story 6, y `.specify/pipeline-constitution.md` v1.1.0
   ampliada con la rama `hotfix/*`).
 - `/speckit-clarify` (2026-07-13) resolvió 2 ambigüedades adicionales de alto
   impacto: los cambios al propio pipeline (workflows, pipeline-constitution,

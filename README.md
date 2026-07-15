@@ -155,7 +155,7 @@ fotos de evidencia.
 
 ## Pipeline de CI/CD y estrategia de ramas
 
-Rige `pipeline-constitution.md` (independiente de `.specify/memory/constitution.md`)
+Rige `.specify/pipeline-constitution.md` (independiente de `.specify/memory/constitution.md`)
 y `specs/002-cicd-pipeline-branching/`. Resumen operativo:
 
 - **`feature/*`**: trabajo en curso, nunca se despliega. Abrir PR hacia

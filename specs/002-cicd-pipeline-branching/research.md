@@ -1,7 +1,7 @@
 # Research: Pipeline de CI/CD y Estrategia de Ramas
 
 Decisiones técnicas tomadas durante Plan, con alternativa descartada y motivo,
-conforme al Principio VII de `pipeline-constitution.md` (gates bloqueantes) y
+conforme al Principio VII de `.specify/pipeline-constitution.md` (gates bloqueantes) y
 en general al mismo criterio de ADR que ya usa `specs/001-.../research.md`.
 
 ## ADR-P1: Mecanismo de detección de componente y de archivos del propio pipeline
@@ -10,7 +10,7 @@ en general al mismo criterio de ADR que ya usa `specs/001-.../research.md`.
   trigger de GitHub Actions: `src/backend/**` para el backend,
   `src/frontend/**` para el frontend. Además, un job de "guardián de
   constitución" se declara con su propio filtro `paths:` que cubre
-  `.github/workflows/**`, `pipeline-constitution.md` y `pipeline-spec.md`, y
+  `.github/workflows/**`, `.specify/pipeline-constitution.md` y `pipeline-spec.md`, y
   se ejecuta en la PR independientemente de si esa misma PR también toca
   código de un componente (FR-020).
 - **Rationale**: `paths:` es soportado nativamente por GitHub Actions, no
@@ -73,7 +73,7 @@ en general al mismo criterio de ADR que ya usa `specs/001-.../research.md`.
 - **Decision**: un job dedicado en cada workflow de PR invoca la API del
   agente (Claude Code Action, o una llamada equivalente a la API de
   Anthropic) pasándole el diff de la PR y el contenido de
-  `pipeline-constitution.md` (y, si la PR toca código de aplicación,
+  `.specify/pipeline-constitution.md` (y, si la PR toca código de aplicación,
   también `.specify/memory/constitution.md`), y falla explícitamente el job
   si detecta una violación — lo que bloquea el merge vía status check
   requerido (FR-004, FR-020).
@@ -94,7 +94,7 @@ en general al mismo criterio de ADR que ya usa `specs/001-.../research.md`.
   `fieldops-backend:1.0.0-snapshot.abc1f3e` en develop,
   `fieldops-backend:1.0.0` en main), autenticado con el `GITHUB_TOKEN`
   inyectado automáticamente.
-- **Rationale**: ya fijado como no negociable en `pipeline-constitution.md`
+- **Rationale**: ya fijado como no negociable en `.specify/pipeline-constitution.md`
   (Additional Constraints); no requiere gestionar ni rotar secretos
   adicionales.
 - **Alternatives considered**: ninguna — es una decisión ya cerrada en la
@@ -124,7 +124,7 @@ en general al mismo criterio de ADR que ya usa `specs/001-.../research.md`.
   con ese tag exacto — ningún job de despliegue tiene un paso de `docker
   build`.
 - **Rationale**: cumple directamente el Principio V de
-  `pipeline-constitution.md`; verificable de forma trivial auditando que
+  `.specify/pipeline-constitution.md`; verificable de forma trivial auditando que
   ningún job con `environment:` contiene un step de build.
 - **Alternatives considered**: ninguna — es un principio no negociable, no
   una decisión de diseño abierta.
@@ -140,7 +140,7 @@ en general al mismo criterio de ADR que ya usa `specs/001-.../research.md`.
   paralizar el flujo por hallazgos de bajo riesgo real.
 - **Alternatives considered**: bloquear ante cualquier hallazgo (descartado,
   demasiado ruidoso); no bloquear nunca y solo reportar (descartado, viola
-  el espíritu del Principio VII de `pipeline-constitution.md`).
+  el espíritu del Principio VII de `.specify/pipeline-constitution.md`).
 
 ## Validación del propio pipeline
 

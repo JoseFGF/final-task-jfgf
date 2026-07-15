@@ -30,7 +30,7 @@ nunca).
 | `frontend-secrets-scan` | FR-003 (Gitleaks) |
 | `constitution-guardian` | FR-004 |
 
-## `pipeline-config-guardian.yml` (dispara: PR con cambios en `.github/workflows/**`, `pipeline-constitution.md`, `pipeline-spec.md`)
+## `pipeline-config-guardian.yml` (dispara: PR con cambios en `.github/workflows/**`, `.specify/pipeline-constitution.md`, `pipeline-spec.md`)
 
 | Job (nombre exacto de check) | Corresponde a |
 |---|---|

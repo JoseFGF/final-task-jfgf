@@ -13,7 +13,7 @@ convención speckit que el resto del proyecto (`001-*`, `003-*`, `004-*`):
 - **Contrato de status checks**: [`specs/002-cicd-pipeline-branching/contracts/required-status-checks.md`](specs/002-cicd-pipeline-branching/contracts/required-status-checks.md)
 
 Las reglas no negociables del pipeline (independientes de este spec) están en
-[`pipeline-constitution.md`](pipeline-constitution.md).
+[`.specify/pipeline-constitution.md`](.specify/pipeline-constitution.md).
 
 No dupliques contenido aquí: cualquier cambio de requisitos del pipeline se
 edita en `specs/002-cicd-pipeline-branching/spec.md`, no en este archivo.

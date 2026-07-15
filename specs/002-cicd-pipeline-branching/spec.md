@@ -11,7 +11,7 @@ de FieldOps desde que se abre una rama de trabajo hasta que llega a producción,
 con validaciones automáticas por componente, construcción y publicación de
 imágenes, y despliegue controlado por entorno.
 
-**Rige esta especificación**: `pipeline-constitution.md` (reglas no negociables
+**Rige esta especificación**: `.specify/pipeline-constitution.md` (reglas no negociables
 del pipeline, independiente de la constitution de la aplicación).
 
 ## Clarifications
@@ -27,13 +27,13 @@ del pipeline, independiente de la constitution de la aplicación).
   revisores concreta, asignada específicamente al entorno de producción,
   distinta de (y más reducida que) el conjunto general de mantenedores.
 - Q: ¿Existe una ruta de hotfix directa a `main` sin pasar por `develop`? →
-  A: Sí. Esto amplía `pipeline-constitution.md` (v1.1.0) con un cuarto tipo
+  A: Sí. Esto amplía `.specify/pipeline-constitution.md` (v1.1.0) con un cuarto tipo
   de rama, `hotfix/*`, que llega a `main` sin pasar por `develop` pero sin
   saltarse ninguno de los gates bloqueantes, y que se reintegra en `develop`
   tras fusionarse.
 - Q: La detección de componente por ruta de archivo (FR-006/FR-007) deja sin
   ningún gate a las PRs que solo tocan archivos de configuración del propio
-  pipeline (workflows, `pipeline-constitution.md`, `pipeline-spec.md`) — justo
+  pipeline (workflows, `.specify/pipeline-constitution.md`, `pipeline-spec.md`) — justo
   el tipo de cambio que más necesita revisión. → A: Cualquier PR que toque
   esos archivos dispara siempre, como mínimo, la revisión del guardián de
   constitución, independientemente de si además toca un componente de la
@@ -343,7 +343,7 @@ que pasa exactamente las mismas validaciones que cualquier otra fusión a
   "reflejado en develop" hasta que esa pull request de reintegración pasa
   sus propias validaciones y se fusiona — abrirla no basta por sí sola.
 - **FR-020**: Toda pull request que modifique archivos de configuración del
-  propio pipeline (workflows, `pipeline-constitution.md`,
+  propio pipeline (workflows, `.specify/pipeline-constitution.md`,
   `pipeline-spec.md`) DEBE disparar, como mínimo, la revisión automática de
   cumplimiento de las reglas del sistema (FR-004), sin importar si la
   detección de componente por ruta de archivo (FR-006) identifica o no un

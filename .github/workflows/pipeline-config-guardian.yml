@@ -11,7 +11,7 @@ on:
     paths:
       - ".github/workflows/**"
       - ".github/scripts/**"
-      - "pipeline-constitution.md"
+      - ".specify/pipeline-constitution.md"
       - "pipeline-spec.md"
       - "specs/002-cicd-pipeline-branching/**"
 
