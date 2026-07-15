@@ -73,12 +73,26 @@ jobs:
           tags: ghcr.io/${{ steps.repo.outputs.lower }}/fieldops-backend:${{ needs.calculate-version.outputs.version }}
       - id: set-image
         run: echo "image=ghcr.io/${{ steps.repo.outputs.lower }}/fieldops-backend:${{ needs.calculate-version.outputs.version }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: mvn package (produce el jar real que certifica el commit compilado)
+        working-directory: src/backend
+        run: mvn -B -DskipTests package
+      - name: Comprimir el dist de esta entrega
+        run: |
+          mkdir -p /tmp/dist
+          cp src/backend/target/*.jar /tmp/dist/
+          cd /tmp/dist && zip -r "backend-v${{ needs.calculate-version.outputs.version }}-dist.zip" .
       - name: Crear el tag de git y la entrega formal (FR-012)
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           tag_name: backend-v${{ needs.calculate-version.outputs.version }}
           name: "Backend v${{ needs.calculate-version.outputs.version }}"
           generate_release_notes: true
+          files: /tmp/dist/backend-v${{ needs.calculate-version.outputs.version }}-dist.zip
 
   deploy-pre:
     name: deploy-pre

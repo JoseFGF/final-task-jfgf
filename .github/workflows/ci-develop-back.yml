@@ -49,10 +49,18 @@ jobs:
           context: src/backend
           push: true
           tags: ghcr.io/${{ steps.version.outputs.repo_lower }}/fieldops-backend:${{ steps.version.outputs.tag }}
-      - name: Comprimir y subir el dist de este build (90 días)
+      - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: mvn package (produce el jar real que certifica el commit compilado)
+        working-directory: src/backend
+        run: mvn -B -DskipTests package
+      - name: Comprimir el dist de este build (90 días)
         run: |
           mkdir -p /tmp/dist
-          cp src/backend/target/*.jar /tmp/dist/ 2>/dev/null || echo "sin jar reutilizable fuera del build multistage de Docker; se conserva solo la imagen publicada"
+          cp src/backend/target/*.jar /tmp/dist/
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: backend-dist-${{ steps.version.outputs.tag }}

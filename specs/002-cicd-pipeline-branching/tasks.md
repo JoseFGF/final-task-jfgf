@@ -96,7 +96,7 @@ esos nombres literales.
 - [X] T026 [US3] [P] Crear `.github/workflows/ci-develop-front.yml`, trigger `push` a `develop`, `paths: ['src/frontend/**']`, permisos mínimos
 - [X] T027 [US3] [P] Job `build-and-publish-snapshot` en `ci-develop-front.yml`
 - [X] T028 [US3] [P] Job `deploy-dev` en `ci-develop-front.yml`
-- [X] T029 [US3] Configurar `actions/upload-artifact` (dist comprimido, retención 90 días) en ambos `ci-develop-*.yml`
+- [X] T029 [US3] Configurar `actions/upload-artifact` (dist comprimido, retención 90 días) en ambos `ci-develop-*.yml` — corregido tras auditoría posterior (2026-07-15): el paso previo no compilaba nada real (faltaba `mvn package` en backend y `npm ci` en frontend) y tragaba el fallo en silencio, subiendo el artifact vacío; ahora ambos ejecutan el build real antes de comprimir
 - [ ] T030 [US3] Verificación manual: ejecutar el Escenario 3 de `quickstart.md` — **pendiente: requiere GitHub Actions real**
 
 **Checkpoint**: US1-US3 cubren PR + integración continua con despliegue automático a dev.
@@ -111,11 +111,11 @@ esos nombres literales.
 
 - [X] T031 [US4] Crear `.github/workflows/ci-main-back.yml`, trigger `push` a `main`, `paths: ['src/backend/**', 'tests/**']`, permisos mínimos
 - [X] T032 [US4] Job `calculate-version` en `ci-main-back.yml` (semantic-release/Conventional Commits, ADR-P2; si ningún commit acumulado coincide con un prefijo reconocido — `feat:`, `fix:`, pie `BREAKING CHANGE:` — falla explícitamente el job — FR-011, no inventa un número)
-- [X] T033 [US4] Job `build-and-publish-release` en `ci-main-back.yml` (imagen con la versión calculada + GitHub Release con el dist comprimido como asset, `softprops/action-gh-release`)
+- [X] T033 [US4] Job `build-and-publish-release` en `ci-main-back.yml` (imagen con la versión calculada + GitHub Release con el dist comprimido como asset, `softprops/action-gh-release`) — corregido tras auditoría posterior (2026-07-15): la llamada a `action-gh-release` no incluía `files:`, publicaba el Release sin ningún asset adjunto; ahora compila el jar real y lo adjunta como `.zip`
 - [X] T034 [US4] Job `deploy-pre` en `ci-main-back.yml` (`environment: pre`, solo pull de la imagen recién publicada)
 - [X] T035 [US4] [P] Crear `.github/workflows/ci-main-front.yml`, trigger `push` a `main`, `paths: ['src/frontend/**']`, permisos mínimos
 - [X] T036 [US4] [P] Job `calculate-version` en `ci-main-front.yml`
-- [X] T037 [US4] [P] Job `build-and-publish-release` en `ci-main-front.yml`
+- [X] T037 [US4] [P] Job `build-and-publish-release` en `ci-main-front.yml` — corregido tras auditoría posterior (2026-07-15): mismo problema que T033 (sin `files:` en el Release); ahora ejecuta `npm ci` + `ng build` real y adjunta el dist como `.zip`
 - [X] T038 [US4] [P] Job `deploy-pre` en `ci-main-front.yml`
 - [ ] T039 [US4] Verificación manual: ejecutar el Escenario 4 de `quickstart.md` (incluido el caso de versión no calculable) — **pendiente: requiere GitHub Actions real**
 
