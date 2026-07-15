@@ -3,6 +3,7 @@ package com.fieldops.controller;
 import com.fieldops.dto.CreateOrderRequest;
 import com.fieldops.dto.IncidentSummaryResponse;
 import com.fieldops.dto.OrderDetailResponse;
+import com.fieldops.dto.OrderStatusChangeRequest;
 import com.fieldops.dto.OrderSummaryResponse;
 import com.fieldops.dto.ReassignmentRequest;
 import com.fieldops.dto.ReviewRequest;
@@ -12,6 +13,7 @@ import com.fieldops.service.EvidencePhotoService.PhotoContent;
 import com.fieldops.service.ExecutionService;
 import com.fieldops.service.IncidentSummaryService;
 import com.fieldops.service.OrderService;
+import com.fieldops.service.OrderStatusService;
 import com.fieldops.service.ReassignmentService;
 import com.fieldops.service.ReviewService;
 import jakarta.validation.Valid;
@@ -49,6 +51,7 @@ public class OrderController {
   private final ReassignmentService reassignmentService;
   private final IncidentSummaryService incidentSummaryService;
   private final EvidencePhotoService evidencePhotoService;
+  private final OrderStatusService orderStatusService;
 
   public OrderController(
       OrderService orderService,
@@ -56,13 +59,15 @@ public class OrderController {
       ReviewService reviewService,
       ReassignmentService reassignmentService,
       IncidentSummaryService incidentSummaryService,
-      EvidencePhotoService evidencePhotoService) {
+      EvidencePhotoService evidencePhotoService,
+      OrderStatusService orderStatusService) {
     this.orderService = orderService;
     this.executionService = executionService;
     this.reviewService = reviewService;
     this.reassignmentService = reassignmentService;
     this.incidentSummaryService = incidentSummaryService;
     this.evidencePhotoService = evidencePhotoService;
+    this.orderStatusService = orderStatusService;
   }
 
   @GetMapping
@@ -129,6 +134,16 @@ public class OrderController {
       Authentication authentication) {
     return reassignmentService.reassign(
         CurrentUser.from(authentication), orderId, request.newTechnicianEmail());
+  }
+
+  @PostMapping("/{orderId}/status")
+  @PreAuthorize("hasAnyRole('DISPATCHER', 'TECHNICIAN', 'SUPERVISOR')")
+  public OrderDetailResponse changeOrderStatus(
+      @PathVariable UUID orderId,
+      @Valid @RequestBody OrderStatusChangeRequest request,
+      Authentication authentication) {
+    return orderStatusService.changeStatus(
+        CurrentUser.from(authentication), orderId, request.status());
   }
 
   @PostMapping("/{orderId}/incident-summary")

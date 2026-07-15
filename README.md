@@ -234,6 +234,19 @@ nuevas (`POST /orders`, campo `description` obligatorio, `technicianEmail`
 opcional), y el detalle de una orden muestra sus fotos de evidencia
 directamente (antes no se mostraban).
 
+**Novedades (feature 004)**: nuevo endpoint `POST /orders/{orderId}/status`
+que cierra el hueco de `assigned→in_progress` (antes ninguna acción real
+llevaba una orden a ese estado). El technician asignado puede "iniciar el
+trabajo" (`{"status": "in_progress"}` sobre su propia orden `assigned`); el
+dispatcher/supervisor puede corregir manualmente el estado entre cualquier
+par **adyacente** de la cadena `draft↔assigned↔in_progress↔pending_review→closed`
+(rechaza saltos no adyacentes con 409, y exige al menos una foto de
+evidencia antes de mover a `pending_review`, 422 si falta). Mover
+manualmente una orden a `draft` desvincula al technician asignado (la
+evidencia/nota ya registradas no se tocan). Sin auditoría de autor/fecha
+para estos dos cambios (decisión explícita, ver `spec.md` de
+`004-order-state-transitions`).
+
 Ejemplo de login y uso del token contra un endpoint protegido:
 
 ```bash

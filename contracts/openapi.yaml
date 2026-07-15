@@ -1,13 +1,16 @@
 openapi: 3.0.3
 info:
   title: FieldOps — Order Lifecycle API
-  version: 0.2.0
+  version: 0.3.0
   description: >
     Contrato de la API para el feature 001-order-lifecycle-workflow
     (reasignación, ejecución y revisión de órdenes), ampliado por el feature
     003-order-management-enhancements (asignación/reasignación por email,
-    creación de órdenes, visualización de fotos de evidencia). Fuente de
-    verdad previa a la implementación (Principio IV de la constitution).
+    creación de órdenes, visualización de fotos de evidencia) y por el
+    feature 004-order-state-transitions (el technician inicia el trabajo de
+    una orden asignada; dispatcher/supervisor corrigen manualmente el estado
+    entre pares de estados adyacentes). Fuente de verdad previa a la
+    implementación (Principio IV de la constitution).
 
 servers:
   - url: /api/v1
@@ -396,6 +399,82 @@ paths:
           description: >
             `newTechnicianEmail` no corresponde a ningún usuario con rol
             TECHNICIAN (FR-002)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders/{orderId}/status:
+    post:
+      summary: >
+        Cambiar el estado de una orden (FR-001 a FR-009,
+        004-order-state-transitions)
+      description: >
+        Endpoint único para dos historias de usuario con reglas de rol
+        distintas (ADR-009, research.md):
+
+        - **TECHNICIAN**: solo puede pedir `status: in_progress` sobre una
+          orden que tiene asignada y que está en `assigned` (FR-001 a
+          FR-003) — "iniciar trabajo".
+        - **DISPATCHER**/**SUPERVISOR**: pueden pedir cualquier `status`
+          destino que sea **adyacente** al estado actual de la orden, en
+          cualquier dirección (FR-004): `draft↔assigned`,
+          `assigned↔in_progress`, `in_progress↔pending_review`,
+          `pending_review→closed`. `closed` nunca es un estado de origen
+          válido (FR-006). Mover hacia atrás hasta `draft` desvincula al
+          technician asignado. Mover hacia `pending_review` exige que la
+          orden ya tenga al menos una foto de evidencia registrada (FR-005,
+          igual que en el registro de ejecución del technician).
+
+        Ninguna de las dos vías queda auditada con autor/fecha (FR-009).
+        Ante cambios de estado concurrentes sobre la misma orden, gana el
+        último procesado válidamente (FR-008, mismo criterio que
+        `reassignment`).
+      x-roles: [DISPATCHER, TECHNICIAN, SUPERVISOR]
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200':
+          description: Orden con el nuevo estado aplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: >
+            El TECHNICIAN no es el asignado a la orden, o pide un `status`
+            distinto de `in_progress` (FR-002); o el rol autenticado no es
+            ninguno de los tres reconocidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: >
+            El `status` destino no es adyacente al estado actual de la
+            orden (FR-003, FR-004), o la orden está en `closed` (FR-006)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: >
+            El destino es `pending_review` y la orden no tiene ninguna
+            foto de evidencia registrada todavía (FR-005)
           content:
             application/json:
               schema:
