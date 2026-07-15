@@ -2,10 +2,9 @@ name: Pipeline Config Guardian
 
 # FR-020: cualquier PR que toque la configuración del propio pipeline
 # dispara el guardián de constitución, sin importar si además toca o no un
-# componente de la aplicación. FR-020/plan.md nombran genéricamente
-# "pipeline-spec.md" como parte de esa configuración; el archivo real de
-# esta feature es specs/002-cicd-pipeline-branching/ (spec.md, plan.md,
-# etc.) — se usa esa ruta real aquí en vez del nombre genérico.
+# componente de la aplicación. pipeline-spec.md (raíz) es solo un puntero al
+# contenido real en specs/002-cicd-pipeline-branching/ — ambas rutas están
+# en el filtro para que un cambio en cualquiera de las dos dispare el gate.
 
 on:
   pull_request:
@@ -13,6 +12,7 @@ on:
       - ".github/workflows/**"
       - ".github/scripts/**"
       - "pipeline-constitution.md"
+      - "pipeline-spec.md"
       - "specs/002-cicd-pipeline-branching/**"
 
 permissions:
